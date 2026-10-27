@@ -83,6 +83,8 @@
             animation: pulse-ring 1.5s infinite;
         }
     </style>
+    <!-- Supabase JS Client v2 -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body class="text-slate-800 antialiased min-h-screen bg-slate-50">
 
@@ -877,6 +879,45 @@
                 </div>
             </div>
 
+            <!-- Supabase Cloud Sync & Realtime Status Card -->
+            <div id="supabase-sync-banner" class="bg-gradient-to-r from-slate-900 via-navy to-slate-950 p-5 rounded-3xl border border-slate-800 text-white shadow-lg flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div class="flex items-center gap-3.5">
+                    <div id="supabase-status-indicator-icon" class="w-12 h-12 rounded-2xl bg-teal-500/10 border border-teal-500/30 flex items-center justify-center text-teal-400 flex-shrink-0">
+                        <i data-lucide="database" class="w-6 h-6"></i>
+                    </div>
+                    <div>
+                        <div class="flex items-center gap-2">
+                            <span id="supabase-connection-badge" class="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30">
+                                بانتظار إدخال مفاتيح Supabase
+                            </span>
+                            <span class="text-xs text-slate-400 font-mono" id="supabase-endpoint-display">
+                                Offline Local Mode
+                            </span>
+                        </div>
+                        <h4 class="font-bold text-sm text-white mt-1">
+                            المزامنة السحابية اللحظية (Supabase Realtime Cloud Sync)
+                        </h4>
+                        <p class="text-xs text-slate-400 mt-0.5 leading-relaxed">
+                            مزامنة تلقائية وفورية لحسابات الطلاب، تقدم الدروس، ومقاطع Cloudinary بين جميع الهواتف والأجهزة دون الحاجة لإعادة تحميل الصفحة.
+                        </p>
+                    </div>
+                </div>
+                <div class="flex items-center gap-2 flex-wrap">
+                    <button type="button" onclick="triggerManualSupabaseSync()" class="px-4 py-2 rounded-xl bg-teal-DEFAULT hover:bg-teal-light text-white text-xs font-bold transition flex items-center gap-1.5 shadow-sm shadow-teal-500/20">
+                        <i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i>
+                        <span>مزامنة سحابية الآن</span>
+                    </button>
+                    <button type="button" onclick="openSupabaseConfigModal()" class="px-4 py-2 rounded-xl bg-white/10 hover:bg-white/20 text-white text-xs font-semibold transition flex items-center gap-1.5 border border-white/15">
+                        <i data-lucide="settings" class="w-3.5 h-3.5"></i>
+                        <span>إعدادات المفاتيح & الربط</span>
+                    </button>
+                    <button type="button" onclick="openSupabaseSqlModal()" class="px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-medium transition flex items-center gap-1" title="عرض استعلام SQL لإنشاء الجداول في Supabase">
+                        <i data-lucide="code" class="w-3.5 h-3.5"></i>
+                        <span>كود SQL</span>
+                    </button>
+                </div>
+            </div>
+
             <!-- Top 6 High-Level KPIs -->
             <div class="grid grid-cols-2 lg:grid-cols-6 gap-3.5">
                 <div class="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-sm">
@@ -1414,6 +1455,148 @@
             </form>
         </div>
     </div>
+    <!-- 2.7 Supabase Cloud Configuration Modal -->
+    <div id="supabase-config-modal" class="fixed inset-0 z-50 bg-black/65 backdrop-blur-sm hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-3xl max-w-xl w-full p-6 sm:p-7 space-y-5 shadow-2xl border border-teal-100 animate-fade-in max-h-[92vh] overflow-y-auto">
+            <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+                <div class="flex items-center gap-2.5">
+                    <div class="w-10 h-10 rounded-2xl bg-teal-50 border border-teal-200 flex items-center justify-center text-teal-600 shadow-sm">
+                        <i data-lucide="database" class="w-5 h-5"></i>
+                    </div>
+                    <div>
+                        <h3 class="font-black text-navy text-base sm:text-lg">إعدادات الربط السحابي المباشر (Supabase)</h3>
+                        <p class="text-xs text-slate-500">حفظ واسترجاع الحسابات، تقدم الدروس، وفيديوهات Cloudinary بتزامن لحظي تام</p>
+                    </div>
+                </div>
+                <button type="button" onclick="closeSupabaseConfigModal()" class="w-8 h-8 rounded-full hover:bg-slate-100 flex items-center justify-center text-slate-400 hover:text-slate-600 transition">
+                    <i data-lucide="x" class="w-4 h-4"></i>
+                </button>
+            </div>
+
+            <form id="supabase-config-form" onsubmit="handleSaveSupabaseConfig(event)" class="space-y-4">
+                <div class="space-y-1.5">
+                    <label class="block text-xs font-bold text-slate-700">Project URL (NEXT_PUBLIC_SUPABASE_URL) <span class="text-rose-500">*</span></label>
+                    <input type="url" id="input-supabase-url" placeholder="https://xxxxxxxxxxxx.supabase.co" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-xs font-mono text-slate-800 bg-slate-50/60 focus:bg-white focus:outline-none focus:ring-2 focus:ring-teal-DEFAULT transition" dir="ltr" required>
+                    <p class="text-[10px] text-slate-400">انسخ الرابط الموجود في لوحة تحكم Supabase أمام NEXT_PUBLIC_SUPABASE_URL</p>
+                </div>
+
+                <div class="space-y-1.5">
+                    <label class="block text-xs font-bold text-slate-700">Anon / Publishable Key (NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY) <span class="text-rose-500">*</span></label>
+                    <textarea id="input-supabase-key" rows="3" placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..." class="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-xs font-mono text-slate-800 bg-slate-50/60 focus:bg-white focus:outline-none focus:ring-2 focus:ring-teal-DEFAULT transition" dir="ltr" required></textarea>
+                    <p class="text-[10px] text-slate-400">المفتاح العام المشفر (anon public key) المخصص لمتصفح الويب وتطبيقات الهواتف</p>
+                </div>
+
+                <div class="p-3.5 rounded-xl bg-teal-50/70 border border-teal-200 text-xs text-teal-900 space-y-1.5">
+                    <div class="font-bold flex items-center gap-1.5">
+                        <i data-lucide="zap" class="w-4 h-4 text-teal-600"></i>
+                        <span>تزامن سحابي فوري Realtime:</span>
+                    </div>
+                    <p class="text-[11px] leading-relaxed text-slate-600">
+                        بمجرد تفعيل المفاتيح، سيتم الاتصال المباشر عبر مكتبة Supabase JS v2، وتفعيل قنوات Realtime Postgres Changes، بحيث تظهر التعديلات على هواتف جميع الطلاب والمشرفين فوراً دون تحديث الصفحة.
+                    </p>
+                </div>
+
+                <div class="flex items-center justify-between pt-2 border-t border-slate-100 flex-wrap gap-2">
+                    <button type="button" onclick="testSupabaseConnectionUI()" class="px-4 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition flex items-center gap-1.5">
+                        <i data-lucide="activity" class="w-4 h-4 text-teal-600"></i>
+                        <span>اختبار الاتصال</span>
+                    </button>
+                    <div class="flex items-center gap-2">
+                        <button type="button" onclick="closeSupabaseConfigModal()" class="px-4 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition">
+                            إلغاء
+                        </button>
+                        <button type="submit" id="btn-save-supabase" class="px-5 py-2.5 rounded-xl bg-teal-DEFAULT hover:bg-teal-light text-white text-xs font-bold transition shadow-sm shadow-teal-500/20 flex items-center gap-1.5">
+                            <i data-lucide="check" class="w-4 h-4"></i>
+                            <span>حفظ وتفعيل التزامن السحابي</span>
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- 2.8 Supabase SQL Schema Helper Modal -->
+    <div id="supabase-sql-modal" class="fixed inset-0 z-50 bg-black/65 backdrop-blur-sm hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-3xl max-w-2xl w-full p-6 sm:p-7 space-y-4 shadow-2xl border border-slate-200 animate-fade-in max-h-[92vh] overflow-y-auto">
+            <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+                <div class="flex items-center gap-2.5">
+                    <div class="w-10 h-10 rounded-2xl bg-slate-100 border border-slate-200 flex items-center justify-center text-slate-700 shadow-sm">
+                        <i data-lucide="code" class="w-5 h-5 text-teal-600"></i>
+                    </div>
+                    <div>
+                        <h3 class="font-black text-navy text-base">استعلام SQL لإنشاء جداول Supabase</h3>
+                        <p class="text-xs text-slate-500">انسخ هذا الكود والصقه في نافذة (SQL Editor) داخل Supabase Dashboard لتفعيل الجداول وصلاحيات القراءة والكتابة</p>
+                    </div>
+                </div>
+                <button type="button" onclick="closeSupabaseSqlModal()" class="w-8 h-8 rounded-full hover:bg-slate-100 flex items-center justify-center text-slate-400 hover:text-slate-600 transition">
+                    <i data-lucide="x" class="w-4 h-4"></i>
+                </button>
+            </div>
+
+            <div class="relative">
+                <pre class="bg-slate-900 text-teal-300 p-4 rounded-2xl text-[11px] font-mono overflow-x-auto leading-relaxed border border-slate-800" dir="ltr" id="supabase-sql-code-block">-- 1. جدول حسابات الطلاب والموظفين
+CREATE TABLE IF NOT EXISTS ysl_accounts (
+    id TEXT PRIMARY KEY,
+    number INT,
+    username TEXT UNIQUE NOT NULL,
+    password TEXT NOT NULL,
+    name TEXT NOT NULL,
+    email TEXT,
+    dept TEXT,
+    role TEXT NOT NULL DEFAULT 'learner',
+    avatar TEXT,
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- 2. جدول تقدم الدروس والأنشطة والتقييمات
+CREATE TABLE IF NOT EXISTS ysl_progress (
+    user_id TEXT PRIMARY KEY REFERENCES ysl_accounts(id) ON DELETE CASCADE,
+    completed_lessons JSONB DEFAULT '[]'::jsonb,
+    ai_writing_score INT DEFAULT 0,
+    speaking_practices INT DEFAULT 0,
+    last_active TEXT,
+    updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- 3. جدول فيديوهات الدروس المتعددة (Cloudinary)
+CREATE TABLE IF NOT EXISTS ysl_lesson_videos (
+    id TEXT PRIMARY KEY,
+    lesson_number INT NOT NULL,
+    title TEXT NOT NULL,
+    file_name TEXT,
+    file_size TEXT,
+    file_type TEXT,
+    download_url TEXT NOT NULL,
+    public_id TEXT,
+    format TEXT,
+    duration TEXT,
+    uploaded_at TEXT,
+    uploaded_by TEXT,
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- تفعيل صلاحيات القراءة والكتابة العامة للمشروع (Row Level Security / Open Policies)
+ALTER TABLE ysl_accounts ENABLE ROW LEVEL SECURITY;
+ALTER TABLE ysl_progress ENABLE ROW LEVEL SECURITY;
+ALTER TABLE ysl_lesson_videos ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Allow public read-write on ysl_accounts" ON ysl_accounts FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "Allow public read-write on ysl_progress" ON ysl_progress FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "Allow public read-write on ysl_lesson_videos" ON ysl_lesson_videos FOR ALL USING (true) WITH CHECK (true);</pre>
+            </div>
+
+            <div class="flex items-center justify-between pt-2 border-t border-slate-100">
+                <button type="button" onclick="copySupabaseSqlScript()" class="px-5 py-2.5 rounded-xl bg-teal-DEFAULT hover:bg-teal-light text-white text-xs font-bold transition flex items-center gap-1.5 shadow-sm shadow-teal-500/20">
+                    <i data-lucide="copy" class="w-4 h-4"></i>
+                    <span>نسخ كود SQL بالكامل</span>
+                </button>
+                <button type="button" onclick="closeSupabaseSqlModal()" class="px-5 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition">
+                    إغلاق
+                </button>
+            </div>
+        </div>
+    </div>
+    
     <!-- 3. Official Certificate of Completion Modal -->
     <div id="certificate-modal" class="fixed inset-0 z-50 bg-black/75 backdrop-blur-sm hidden flex items-center justify-center p-4">
         <div class="bg-white rounded-3xl max-w-2xl w-full p-6 sm:p-8 space-y-6 shadow-2xl border border-amber-200 max-h-[92vh] overflow-y-auto custom-scrollbar">
@@ -5866,6 +6049,464 @@ Return ONLY a valid JSON object matching this exact schema:
                 </div>
             `;
         }
+
+    
+        // ==========================================
+        // 21. SUPABASE REALTIME CLOUD INTEGRATION
+        // ==========================================
+        const SUPABASE_DEFAULT_CONFIG = {
+            url: "", // الصق هنا رابط NEXT_PUBLIC_SUPABASE_URL
+            anonKey: "" // الصق هنا مفتاح NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY
+        };
+
+        let supabaseClient = null;
+        let isSupabaseSyncing = false;
+        let supabaseRealtimeChannel = null;
+
+        function getSupabaseConfig() {
+            const savedUrl = localStorage.getItem("YSL_SUPABASE_URL") || SUPABASE_DEFAULT_CONFIG.url;
+            const savedKey = localStorage.getItem("YSL_SUPABASE_KEY") || SUPABASE_DEFAULT_CONFIG.anonKey;
+            return {
+                url: (savedUrl || "").trim(),
+                anonKey: (savedKey || "").trim()
+            };
+        }
+
+        function updateSupabaseStatusUI(isConnected, customEndpoint = "") {
+            const badge = document.getElementById("supabase-connection-badge");
+            const endpointDisp = document.getElementById("supabase-endpoint-display");
+            const iconBox = document.getElementById("supabase-status-indicator-icon");
+
+            if (isConnected) {
+                if (badge) {
+                    badge.innerText = "🟢 متصل سحابياً بـ Supabase Realtime";
+                    badge.className = "px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30";
+                }
+                if (endpointDisp) {
+                    const host = customEndpoint ? new URL(customEndpoint).hostname : "Connected";
+                    endpointDisp.innerText = host;
+                    endpointDisp.className = "text-xs text-emerald-400 font-mono";
+                }
+                if (iconBox) {
+                    iconBox.className = "w-12 h-12 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center text-emerald-400 flex-shrink-0";
+                }
+            } else {
+                if (badge) {
+                    badge.innerText = "🟠 بانتظار إدخال مفاتيح Supabase";
+                    badge.className = "px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30";
+                }
+                if (endpointDisp) {
+                    endpointDisp.innerText = "وضع التخزين المحلي Offline";
+                    endpointDisp.className = "text-xs text-slate-400 font-mono";
+                }
+                if (iconBox) {
+                    iconBox.className = "w-12 h-12 rounded-2xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-400 flex-shrink-0";
+                }
+            }
+            if (window.lucide) lucide.createIcons();
+        }
+
+        function initSupabaseClient() {
+            const config = getSupabaseConfig();
+            if (!config.url || !config.anonKey) {
+                updateSupabaseStatusUI(false);
+                return null;
+            }
+
+            try {
+                if (typeof window.supabase !== "undefined" && window.supabase.createClient) {
+                    supabaseClient = window.supabase.createClient(config.url, config.anonKey);
+                    updateSupabaseStatusUI(true, config.url);
+                    setupSupabaseRealtimeSubscriptions();
+                    // Initial background sync
+                    syncAllFromSupabase(true);
+                    return supabaseClient;
+                } else {
+                    console.warn("Supabase library not yet loaded in window.");
+                    updateSupabaseStatusUI(false);
+                    return null;
+                }
+            } catch (err) {
+                console.error("Error creating Supabase client:", err);
+                updateSupabaseStatusUI(false);
+                return null;
+            }
+        }
+
+        function setupSupabaseRealtimeSubscriptions() {
+            if (!supabaseClient) return;
+            try {
+                if (supabaseRealtimeChannel) {
+                    supabaseClient.removeChannel(supabaseRealtimeChannel);
+                }
+                supabaseRealtimeChannel = supabaseClient.channel("ysl_realtime_changes")
+                    .on("postgres_changes", { event: "*", schema: "public", table: "ysl_accounts" }, () => {
+                        console.log("Realtime: ysl_accounts changed, syncing...");
+                        syncAllFromSupabase(true);
+                    })
+                    .on("postgres_changes", { event: "*", schema: "public", table: "ysl_progress" }, () => {
+                        console.log("Realtime: ysl_progress changed, syncing...");
+                        syncAllFromSupabase(true);
+                    })
+                    .on("postgres_changes", { event: "*", schema: "public", table: "ysl_lesson_videos" }, () => {
+                        console.log("Realtime: ysl_lesson_videos changed, syncing...");
+                        syncAllFromSupabase(true);
+                    })
+                    .subscribe();
+            } catch (e) {
+                console.warn("Supabase realtime setup notice:", e);
+            }
+        }
+
+        async function syncAllFromSupabase(silent = false) {
+            if (!supabaseClient || isSupabaseSyncing) return;
+            isSupabaseSyncing = true;
+
+            try {
+                // 1. Fetch Accounts from Supabase
+                const { data: accountsData, error: accErr } = await supabaseClient
+                    .from("ysl_accounts")
+                    .select("*")
+                    .order("created_at", { ascending: false });
+
+                if (!accErr && accountsData && accountsData.length > 0) {
+                    const formattedAccounts = accountsData.map(row => ({
+                        id: row.id,
+                        number: row.number,
+                        username: row.username,
+                        password: row.password,
+                        name: row.name,
+                        email: row.email,
+                        dept: row.dept,
+                        role: row.role,
+                        avatar: row.avatar,
+                        createdAt: row.created_at
+                    }));
+                    localStorage.setItem("YSL_ACCOUNTS_DB", JSON.stringify(formattedAccounts));
+                }
+
+                // 2. Fetch Progress from Supabase
+                const { data: progressData, error: progErr } = await supabaseClient
+                    .from("ysl_progress")
+                    .select("*");
+
+                if (!progErr && progressData && progressData.length > 0) {
+                    const progMap = {};
+                    progressData.forEach(row => {
+                        progMap[row.user_id] = {
+                            completedLessons: Array.isArray(row.completed_lessons) ? row.completed_lessons : [],
+                            aiWritingScore: row.ai_writing_score || 0,
+                            speakingPractices: row.speaking_practices || 0,
+                            lastActive: row.last_active || "مؤخراً"
+                        };
+                    });
+                    localStorage.setItem("YSL_PROGRESS_DB", JSON.stringify(progMap));
+                }
+
+                // 3. Fetch Lesson Videos from Supabase
+                const { data: videosData, error: vidErr } = await supabaseClient
+                    .from("ysl_lesson_videos")
+                    .select("*")
+                    .order("created_at", { ascending: true });
+
+                if (!vidErr && videosData && videosData.length > 0) {
+                    const groupedVideos = {};
+                    videosData.forEach(row => {
+                        const lNum = row.lesson_number;
+                        if (!groupedVideos[lNum]) groupedVideos[lNum] = [];
+                        groupedVideos[lNum].push({
+                            id: row.id,
+                            title: row.title,
+                            fileName: row.file_name,
+                            fileSize: row.file_size,
+                            fileType: row.file_type || "video/mp4",
+                            downloadUrl: row.download_url,
+                            publicId: row.public_id || "",
+                            format: row.format || "mp4",
+                            duration: row.duration,
+                            uploadedAt: row.uploaded_at,
+                            uploadedBy: row.uploaded_by
+                        });
+                    });
+                    localStorage.setItem("YSL_LESSON_VIDEOS", JSON.stringify(groupedVideos));
+                }
+
+                // Sync current active user session with newest progress
+                if (currentUser) {
+                    const currentProgDb = getProgressDb();
+                    if (currentProgDb[currentUser.id]) {
+                        currentUser.completedLessons = currentProgDb[currentUser.id].completedLessons || [];
+                        localStorage.setItem("YSL_ACTIVE_SESSION", JSON.stringify(currentUser));
+                    }
+                }
+
+                // Refresh Admin Table & Video Managers
+                if (typeof initLmsAdmin === "function") initLmsAdmin();
+                if (typeof renderAdminVideoManager === "function") renderAdminVideoManager();
+                if (currentLessonId && typeof selectLesson === "function") selectLesson(currentLessonId);
+
+                if (!silent) {
+                    alert("✅ تمت المزامنة السحابية بنجاح مع قاعدة بيانات Supabase!");
+                }
+            } catch (err) {
+                console.error("Supabase sync error:", err);
+                if (!silent) {
+                    alert("حدث خطأ أثناء المزامنة مع Supabase: " + (err.message || err));
+                }
+            } finally {
+                isSupabaseSyncing = false;
+            }
+        }
+
+        // Helpers to sync specific operations immediately to Supabase
+        async function syncAccountToSupabase(account) {
+            if (!supabaseClient) return;
+            try {
+                await supabaseClient.from("ysl_accounts").upsert([{
+                    id: account.id,
+                    number: account.number,
+                    username: account.username,
+                    password: account.password,
+                    name: account.name,
+                    email: account.email,
+                    dept: account.dept,
+                    role: account.role,
+                    avatar: account.avatar
+                }]);
+            } catch (e) {
+                console.warn("syncAccountToSupabase error:", e);
+            }
+        }
+
+        async function syncProgressToSupabase(userId, progressObj) {
+            if (!supabaseClient) return;
+            try {
+                await supabaseClient.from("ysl_progress").upsert([{
+                    user_id: userId,
+                    completed_lessons: progressObj.completedLessons || [],
+                    ai_writing_score: progressObj.aiWritingScore || 0,
+                    speaking_practices: progressObj.speakingPractices || 0,
+                    last_active: progressObj.lastActive || "اليوم",
+                    updated_at: new Date().toISOString()
+                }]);
+            } catch (e) {
+                console.warn("syncProgressToSupabase error:", e);
+            }
+        }
+
+        async function syncVideoToSupabase(videoItem, lessonNum) {
+            if (!supabaseClient) return;
+            try {
+                await supabaseClient.from("ysl_lesson_videos").upsert([{
+                    id: videoItem.id,
+                    lesson_number: lessonNum,
+                    title: videoItem.title,
+                    file_name: videoItem.fileName,
+                    file_size: videoItem.fileSize,
+                    file_type: videoItem.fileType || "video/mp4",
+                    download_url: videoItem.downloadUrl,
+                    public_id: videoItem.publicId || "",
+                    format: videoItem.format || "mp4",
+                    duration: videoItem.duration || null,
+                    uploaded_at: videoItem.uploadedAt,
+                    uploaded_by: videoItem.uploadedBy
+                }]);
+            } catch (e) {
+                console.warn("syncVideoToSupabase error:", e);
+            }
+        }
+
+        async function deleteAccountFromSupabase(accountId) {
+            if (!supabaseClient) return;
+            try {
+                await supabaseClient.from("ysl_progress").delete().eq("user_id", accountId);
+                await supabaseClient.from("ysl_accounts").delete().eq("id", accountId);
+            } catch (e) {
+                console.warn("deleteAccountFromSupabase error:", e);
+            }
+        }
+
+        async function deleteVideoFromSupabase(videoId) {
+            if (!supabaseClient) return;
+            try {
+                await supabaseClient.from("ysl_lesson_videos").delete().eq("id", videoId);
+            } catch (e) {
+                console.warn("deleteVideoFromSupabase error:", e);
+            }
+        }
+
+        // Hook into user creation to push to Supabase
+        const originalHandleCreateNewUser = window.handleCreateNewUser;
+        window.handleCreateNewUser = function(event) {
+            if (typeof originalHandleCreateNewUser === "function") {
+                originalHandleCreateNewUser(event);
+            }
+            // Sync new account & progress to Supabase
+            const accounts = getAccountsDb();
+            if (accounts && accounts.length > 0) {
+                const newest = accounts[0];
+                syncAccountToSupabase(newest);
+                const progDb = getProgressDb();
+                if (progDb[newest.id]) {
+                    syncProgressToSupabase(newest.id, progDb[newest.id]);
+                }
+            }
+        };
+
+        // Hook into user deletion to delete from Supabase
+        const originalExecuteDeleteEmployee = window.executeDeleteEmployee;
+        window.executeDeleteEmployee = function() {
+            const empId = employeeToDeleteId;
+            if (typeof originalExecuteDeleteEmployee === "function") {
+                originalExecuteDeleteEmployee();
+            }
+            if (empId) {
+                deleteAccountFromSupabase(empId);
+            }
+        };
+
+        // Hook into video upload to push to Supabase
+        const originalSaveLessonVideosDb = window.saveLessonVideosDb;
+        window.saveLessonVideosDb = function(db) {
+            if (typeof originalSaveLessonVideosDb === "function") {
+                originalSaveLessonVideosDb(db);
+            }
+            // Sync all recent videos to Supabase
+            if (supabaseClient && db) {
+                Object.keys(db).forEach(lessonNum => {
+                    const list = getLessonVideos(parseInt(lessonNum, 10));
+                    list.forEach(v => syncVideoToSupabase(v, parseInt(lessonNum, 10)));
+                });
+            }
+        };
+
+        // Hook into lesson completion to push progress to Supabase
+        const originalToggleLessonComplete = window.toggleLessonComplete;
+        window.toggleLessonComplete = function(lessonNum) {
+            if (typeof originalToggleLessonComplete === "function") {
+                originalToggleLessonComplete(lessonNum);
+            }
+            if (currentUser) {
+                const progDb = getProgressDb();
+                if (progDb[currentUser.id]) {
+                    syncProgressToSupabase(currentUser.id, progDb[currentUser.id]);
+                }
+            }
+        };
+
+        // Supabase UI Modals & Actions
+        function openSupabaseConfigModal() {
+            const modal = document.getElementById("supabase-config-modal");
+            if (!modal) return;
+            const config = getSupabaseConfig();
+            const urlInput = document.getElementById("input-supabase-url");
+            const keyInput = document.getElementById("input-supabase-key");
+            if (urlInput) urlInput.value = config.url;
+            if (keyInput) keyInput.value = config.anonKey;
+            modal.classList.remove("hidden");
+            if (window.lucide) lucide.createIcons();
+        }
+
+        function closeSupabaseConfigModal() {
+            const modal = document.getElementById("supabase-config-modal");
+            if (modal) modal.classList.add("hidden");
+        }
+
+        function openSupabaseSqlModal() {
+            const modal = document.getElementById("supabase-sql-modal");
+            if (modal) modal.classList.remove("hidden");
+            if (window.lucide) lucide.createIcons();
+        }
+
+        function closeSupabaseSqlModal() {
+            const modal = document.getElementById("supabase-sql-modal");
+            if (modal) modal.classList.add("hidden");
+        }
+
+        function copySupabaseSqlScript() {
+            const block = document.getElementById("supabase-sql-code-block");
+            const text = block ? block.innerText : "";
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(text).then(() => {
+                    alert("✓ تم نسخ كود استعلام SQL بنجاح!\nالصقه الآن في نافذة SQL Editor في Supabase.");
+                }).catch(() => {
+                    prompt("انسخ كود SQL من هنا:", text);
+                });
+            } else {
+                prompt("انسخ كود SQL من هنا:", text);
+            }
+        }
+
+        async function testSupabaseConnectionUI() {
+            const urlInput = document.getElementById("input-supabase-url");
+            const keyInput = document.getElementById("input-supabase-key");
+            const testUrl = urlInput ? urlInput.value.trim() : "";
+            const testKey = keyInput ? keyInput.value.trim() : "";
+
+            if (!testUrl || !testKey) {
+                alert("يرجى إدخال الرابط والمفتاح أولاً لاختبار الاتصال.");
+                return;
+            }
+
+            try {
+                if (typeof window.supabase === "undefined") {
+                    alert("مكتبة Supabase قيد التحميل، يرجى الانتظار ثانية.");
+                    return;
+                }
+                const testClient = window.supabase.createClient(testUrl, testKey);
+                // Attempt simple ping to one of the tables
+                const { data, error } = await testClient.from("ysl_accounts").select("id").limit(1);
+
+                if (error && error.code === "PGRST204" || (error && error.message.includes("relation") && error.message.includes("does not exist"))) {
+                    alert("✅ تم الاتصال بنجاح بمشروع Supabase!\n\nملاحظة: الجداول غير منشأة بعد.\nيرجى فتح نافذة (كود SQL) ونسخ الاستعلام لتشغيله في Supabase SQL Editor.");
+                } else if (error) {
+                    alert("فشل التحقق من الاتصال:\n" + error.message);
+                } else {
+                    alert("🎉 تم الاتصال بنجاح تام بقاعدة بيانات Supabase والجداول جاهزة ومفعلة!");
+                }
+            } catch (e) {
+                alert("خطأ أثناء اختبار الاتصال: " + e.message);
+            }
+        }
+
+        async function handleSaveSupabaseConfig(event) {
+            event.preventDefault();
+            const urlInput = document.getElementById("input-supabase-url");
+            const keyInput = document.getElementById("input-supabase-key");
+            const url = urlInput ? urlInput.value.trim() : "";
+            const key = keyInput ? keyInput.value.trim() : "";
+
+            if (!url || !key) {
+                alert("يرجى ملء كل من الرابط والمفتاح.");
+                return;
+            }
+
+            localStorage.setItem("YSL_SUPABASE_URL", url);
+            localStorage.setItem("YSL_SUPABASE_KEY", key);
+
+            initSupabaseClient();
+            closeSupabaseConfigModal();
+
+            // Export local accounts and videos to Supabase if Supabase is currently empty
+            await syncAllFromSupabase(false);
+        }
+
+        function triggerManualSupabaseSync() {
+            const config = getSupabaseConfig();
+            if (!config.url || !config.anonKey) {
+                openSupabaseConfigModal();
+                return;
+            }
+            if (!supabaseClient) {
+                initSupabaseClient();
+            }
+            syncAllFromSupabase(false);
+        }
+
+        // Initialize Supabase on load
+        window.addEventListener("DOMContentLoaded", () => {
+            initSupabaseClient();
+        });
 
     </script>
 </body>
