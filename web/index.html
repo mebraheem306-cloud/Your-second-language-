@@ -44,6 +44,9 @@
     <script src="https://unpkg.com/lucide@latest"></script>
     <!-- Canvas Confetti -->
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <!-- Firebase App & Firebase Storage SDKs (Compat v10) -->
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+    
 
     <style>
         body {
@@ -1038,6 +1041,38 @@
                     </button>
                 </div>
             </div>
+                    <!-- ============================================== -->
+            <!-- ADMIN LESSON VIDEOS MANAGER (FIREBASE STORAGE) -->
+            <!-- ============================================== -->
+            <div class="bg-white p-6 sm:p-7 rounded-3xl border border-slate-200/80 shadow-sm space-y-6">
+                <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-100 pb-5">
+                    <div>
+                        <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-teal-50 border border-teal-200 text-teal-700 text-xs font-bold mb-2">
+                            <i data-lucide="cloud" class="w-3.5 h-3.5 text-teal-600"></i>
+                            <span>Firebase Cloud Storage Integration</span>
+                        </div>
+                        <h3 class="text-xl font-black text-navy flex items-center gap-2">
+                            <i data-lucide="video" class="w-5 h-5 text-teal-DEFAULT"></i>
+                            <span>إدارة ورفع فيديوهات الدروس (Video Library)</span>
+                        </h3>
+                        <p class="text-xs text-slate-500 mt-1 max-w-2xl leading-relaxed">
+                            رفع وتحديث مقاطع الفيديو التدريبية المتعددة للدروس الـ 11 مباشرة من جهازك وتخزينها سحابياً عبر Cloudinary (<code class="font-mono text-teal-700 font-bold" dir="ltr">qvqba0pr / ml_default</code>)، مع دعم رفع أكثر من فيديو لكل درس ومشغل تفاعلي وزر تنزيل مباشر للطلاب.
+                        </p>
+                    </div>
+
+                    <div class="flex items-center gap-2 flex-wrap">
+                        <button onclick="openUploadVideoModal()" class="px-4 py-2.5 rounded-xl bg-teal-DEFAULT hover:bg-teal-light text-white text-xs font-bold transition flex items-center gap-2 shadow-md shadow-teal-DEFAULT/20 flex-shrink-0">
+                            <i data-lucide="upload-cloud" class="w-4 h-4"></i>
+                            <span>+ رفع فيديو تعليمي جديد</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Video Library Overview Grid -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4" id="admin-video-library-grid">
+                    <!-- Populated dynamically via renderAdminVideoManager() -->
+                </div>
+            </div>
         </section>
 
     </main>
@@ -1256,6 +1291,129 @@
         </div>
     </div>
 
+    
+    <!-- 2.6 Supervisor Upload Video to Cloudinary Modal -->
+    <div id="upload-video-modal" class="fixed inset-0 z-50 bg-black/65 backdrop-blur-sm hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-3xl max-w-xl w-full p-6 sm:p-7 space-y-5 shadow-2xl border border-teal-100 animate-fade-in max-h-[92vh] overflow-y-auto">
+            <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+                <div class="flex items-center gap-2.5">
+                    <div class="w-10 h-10 rounded-2xl bg-teal-50 border border-teal-200 flex items-center justify-center text-teal-600 shadow-sm">
+                        <i data-lucide="cloud-upload" class="w-5 h-5"></i>
+                    </div>
+                    <div>
+                        <h3 class="font-black text-navy text-base sm:text-lg">رفع فيديو تعليمي عبر Cloudinary</h3>
+                        <p class="text-xs text-slate-500">رفع سحابي مباشر مع دعم إضافة أكثر من فيديو لكل درس وزر تنزيل مباشر للطلاب</p>
+                    </div>
+                </div>
+                <button type="button" onclick="closeUploadVideoModal()" class="w-8 h-8 rounded-full hover:bg-slate-100 flex items-center justify-center text-slate-400 hover:text-slate-600 transition">
+                    <i data-lucide="x" class="w-4 h-4"></i>
+                </button>
+            </div>
+
+            <form id="upload-video-form" onsubmit="startUploadVideoToCloudinary(event)" class="space-y-4">
+                <!-- Lesson Selection & Status -->
+                <div class="space-y-1.5">
+                    <div class="flex items-center justify-between">
+                        <label class="block text-xs font-bold text-slate-700">اختر الدرس المستهدف <span class="text-rose-500">*</span></label>
+                        <span id="lesson-existing-videos-badge" class="text-[10px] font-bold text-teal-700 bg-teal-50 px-2 py-0.5 rounded-full border border-teal-200">
+                            جاري فحص الفيديوهات...
+                        </span>
+                    </div>
+                    <select id="video-target-lesson" onchange="onTargetLessonChange()" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-xs font-medium text-slate-800 bg-slate-50/60 focus:bg-white focus:outline-none focus:ring-2 focus:ring-teal-DEFAULT transition">
+                        <option value="1">الدرس 1: Greetings & First Impressions (التحيات والتعارف المهني)</option>
+                        <option value="2">الدرس 2: Professional Emails & Writing (المراسلات الإدارية)</option>
+                        <option value="3">الدرس 3: Business Meetings & Agendas (الاجتماعات الدورية)</option>
+                        <option value="4">الدرس 4: Telephone Etiquette & Inquiries (المكالمات الهاتفية)</option>
+                        <option value="5">الدرس 5: Client Presentations & Pitches (العروض التقديمية)</option>
+                        <option value="6">الدرس 6: Contract Negotiation & Terms (التفاوض والعقود)</option>
+                        <option value="7">الدرس 7: Cross-Cultural Communication (التواصل متعدد الثقافات)</option>
+                        <option value="8">الدرس 8: Crisis Management & Escalation (إدارة الأزمات)</option>
+                        <option value="9">الدرس 9: Financial Reports & Budgets (التقارير المالية)</option>
+                        <option value="10">الدرس 10: Technical Documentation & Systems (التوثيق التقني)</option>
+                        <option value="11">الدرس 11: Strategic Leadership & Vision (القيادة الاستراتيجية)</option>
+                    </select>
+                </div>
+
+                <!-- Video Title -->
+                <div class="space-y-1.5">
+                    <label class="block text-xs font-bold text-slate-700">عنوان الفيديو أو وصف المحاضرة <span class="text-rose-500">*</span></label>
+                    <input type="text" id="video-custom-title" placeholder="مثال: المحاضرة 1 - شرح المحادثات الرسمية وتطبيقات العمل" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-xs text-slate-800 bg-slate-50/60 focus:bg-white focus:outline-none focus:ring-2 focus:ring-teal-DEFAULT transition" required>
+                    <p class="text-[10px] text-slate-400">يمكنك تسمية الفيديو بدقة لتمييزه عند إضافة أكثر من فيديو لنفس الدرس</p>
+                </div>
+
+                <!-- File Drop Zone -->
+                <div class="space-y-1.5">
+                    <label class="block text-xs font-bold text-slate-700">ملف الفيديو من جهازك (MP4 / WebM / QuickTime) <span class="text-rose-500">*</span></label>
+                    <div id="video-dropzone" class="border-2 border-dashed border-slate-300 hover:border-teal-DEFAULT rounded-2xl p-5 text-center transition bg-slate-50/40 hover:bg-teal-50/20 cursor-pointer" onclick="document.getElementById('video-file-input').click()">
+                        <input type="file" id="video-file-input" accept="video/mp4,video/webm,video/ogg,video/quicktime,video/m4v" class="hidden" onchange="handleVideoFileSelected(event)">
+                        <div class="space-y-2">
+                            <div class="w-12 h-12 mx-auto rounded-full bg-teal-100/60 text-teal-DEFAULT flex items-center justify-center">
+                                <i data-lucide="video" class="w-6 h-6"></i>
+                            </div>
+                            <div class="text-xs text-slate-600 font-medium">
+                                <span class="font-bold text-teal-700 hover:underline">انقر لاختيار فيديو من جهازك</span> أو اسحب الملف هنا
+                            </div>
+                            <p class="text-[11px] text-slate-400">الصيغ المدعومة: MP4, WebM, MOV (الرفع السحابي مباشر عبر Cloudinary CDN)</p>
+                        </div>
+                    </div>
+
+                    <!-- Selected File Preview Badge -->
+                    <div id="selected-file-preview" class="hidden p-3 rounded-xl bg-teal-50 border border-teal-200 flex items-center justify-between gap-3 text-xs">
+                        <div class="flex items-center gap-2 overflow-hidden">
+                            <i data-lucide="file-video" class="w-4 h-4 text-teal-600 flex-shrink-0"></i>
+                            <div class="truncate">
+                                <span id="preview-file-name" class="font-bold text-navy block truncate">video.mp4</span>
+                                <span id="preview-file-size" class="text-[10px] text-slate-500 font-mono">0 MB</span>
+                            </div>
+                        </div>
+                        <button type="button" onclick="clearSelectedVideoFile()" class="p-1 text-slate-400 hover:text-rose-600 transition" title="إلغاء الملف">
+                            <i data-lucide="trash-2" class="w-4 h-4"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Live Upload Progress Card -->
+                <div id="upload-progress-container" class="hidden space-y-2 p-3.5 rounded-xl bg-slate-900 text-white border border-slate-800">
+                    <div class="flex items-center justify-between text-xs">
+                        <div class="flex items-center gap-2">
+                            <span class="w-2 h-2 rounded-full bg-teal-400 animate-ping"></span>
+                            <span class="font-bold text-teal-300">جارٍ الرفع السحابي إلى Cloudinary...</span>
+                        </div>
+                        <span id="upload-percent-text" class="font-mono font-bold text-teal-400">0%</span>
+                    </div>
+                    <div class="w-full bg-slate-800 h-2.5 rounded-full overflow-hidden">
+                        <div id="upload-progress-bar" class="bg-gradient-to-r from-teal-DEFAULT to-teal-light h-full w-0 transition-all duration-200 rounded-full"></div>
+                    </div>
+                    <div class="flex items-center justify-between text-[10px] text-slate-400 font-mono">
+                        <span id="upload-bytes-text">0.0 MB / 0.0 MB</span>
+                        <span id="upload-bucket-target" class="text-teal-400">Cloud Name: qvqba0pr • Preset: ml_default</span>
+                    </div>
+                </div>
+
+                <!-- Cloudinary Info Note -->
+                <div class="p-3 rounded-xl bg-slate-50 border border-slate-200 text-[11px] text-slate-600 space-y-1">
+                    <div class="flex items-center gap-1.5 font-bold text-navy">
+                        <i data-lucide="zap" class="w-3.5 h-3.5 text-teal-600"></i>
+                        <span>تأكيد الربط بـ Cloudinary:</span>
+                    </div>
+                    <p class="leading-relaxed text-slate-500">
+                        يتم الرفع المباشر عبر السحابة إلى حسابك: <code class="text-teal-700 font-mono font-bold" dir="ltr">qvqba0pr</code> باستخدام الـ Preset <code class="text-teal-700 font-mono font-bold" dir="ltr">ml_default</code>. يتم حفظ كل فيديو يرفعه المشرف ضمن قائمة فيديوهات الدرس مع إتاحة مشغل تفاعلي وزر تنزيل مباشر لكل فيديو.
+                    </p>
+                </div>
+
+                <!-- Action Buttons -->
+                <div class="flex items-center justify-end gap-2.5 pt-2">
+                    <button type="button" onclick="closeUploadVideoModal()" class="px-5 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition">
+                        إلغاء
+                    </button>
+                    <button type="submit" id="btn-submit-upload" class="px-6 py-2.5 rounded-xl bg-teal-DEFAULT hover:bg-teal-light text-white text-xs font-bold transition shadow-sm shadow-teal-500/20 flex items-center gap-1.5">
+                        <i data-lucide="upload-cloud" class="w-4 h-4"></i>
+                        <span>بدء الرفع إلى Cloudinary</span>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
     <!-- 3. Official Certificate of Completion Modal -->
     <div id="certificate-modal" class="fixed inset-0 z-50 bg-black/75 backdrop-blur-sm hidden flex items-center justify-center p-4">
         <div class="bg-white rounded-3xl max-w-2xl w-full p-6 sm:p-8 space-y-6 shadow-2xl border border-amber-200 max-h-[92vh] overflow-y-auto custom-scrollbar">
@@ -2228,81 +2386,7 @@
                         </div>
 
                         <!-- 1. Educational Video Player -->
-                        <div class="rounded-2xl overflow-hidden bg-slate-900 border border-slate-800 text-white shadow-md">
-                            <!-- Video Top Bar -->
-                            <div class="p-3 bg-slate-950/90 border-b border-slate-800 flex items-center justify-between flex-wrap gap-2 text-xs">
-                                <div class="flex items-center gap-2">
-                                    <span class="w-2.5 h-2.5 rounded-full bg-rose-500 animate-pulse"></span>
-                                    <span class="font-bold text-white">فيديو الشرح التفاعلي: الدرس ${lesson.number} (${lesson.title})</span>
-                                    <span class="px-2 py-0.5 rounded bg-white/10 text-slate-300 font-mono text-[10px]">1080p HD</span>
-                                </div>
-                                <div class="flex items-center gap-2 text-[11px] text-slate-400">
-                                    <span>المشاهدات: 1,420 موظف</span>
-                                    <span>•</span>
-                                    <span class="text-teal-400 font-semibold">مادة تدريبية معتمدة</span>
-                                </div>
-                            </div>
-
-                            <!-- Video Screen & Controls -->
-                            <div class="relative aspect-video sm:h-72 w-full bg-gradient-to-br from-slate-950 via-slate-900 to-navy flex items-center justify-center p-6 text-center select-none overflow-hidden group">
-                                <div class="absolute inset-0 opacity-15 bg-[radial-gradient(#2dd4bf_1px,transparent_1px)] [background-size:16px_16px]"></div>
-                                
-                                <div class="relative z-10 space-y-3 max-w-md mx-auto">
-                                    <div class="w-16 h-16 sm:w-20 sm:h-20 mx-auto rounded-full bg-teal-DEFAULT/20 border-2 border-teal-DEFAULT flex items-center justify-center shadow-lg group-hover:scale-110 transition cursor-pointer" onclick="toggleLessonVideo(${lesson.number})">
-                                        <i data-lucide="play" id="video-play-icon-${lesson.number}" class="w-8 h-8 sm:w-10 sm:h-10 text-teal-light fill-teal-light ml-1"></i>
-                                    </div>
-                                    <div>
-                                        <h5 class="text-base sm:text-lg font-bold text-white en-font" dir="ltr">${lesson.title}: Video Masterclass</h5>
-                                        <p class="text-xs text-slate-300 mt-1">${lesson.description}</p>
-                                    </div>
-                                    <div id="video-playing-badge-${lesson.number}" class="hidden inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/20 text-emerald-300 text-xs font-semibold border border-emerald-500/40">
-                                        <span class="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
-                                        <span>جاري تشغيل الشرح الصوتي والمرئي للدرس...</span>
-                                    </div>
-                                </div>
-
-                                <!-- Video Bottom Controls Overlay -->
-                                <div class="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/90 via-black/50 to-transparent p-3 pt-6 space-y-2">
-                                    <div class="w-full bg-slate-700/60 h-1.5 rounded-full overflow-hidden cursor-pointer" onclick="seekVideo(${lesson.number}, event)">
-                                        <div id="video-progress-${lesson.number}" class="bg-teal-DEFAULT h-full w-1/4 transition-all"></div>
-                                    </div>
-                                    <div class="flex items-center justify-between text-[11px] text-slate-300">
-                                        <div class="flex items-center gap-3">
-                                            <button onclick="toggleLessonVideo(${lesson.number})" class="hover:text-teal-DEFAULT transition">
-                                                <i data-lucide="play" class="w-4 h-4"></i>
-                                            </button>
-                                            <span id="video-time-${lesson.number}">01:45 / 06:30</span>
-                                        </div>
-                                        <div class="flex items-center gap-2">
-                                            <span class="text-slate-400">السرعة:</span>
-                                            <button onclick="setVideoSpeed(${lesson.number}, 0.75)" id="vspeed-075-${lesson.number}" class="px-1.5 py-0.5 rounded bg-white/10 hover:bg-white/20 text-[10px]">0.75x</button>
-                                            <button onclick="setVideoSpeed(${lesson.number}, 1.0)" id="vspeed-100-${lesson.number}" class="px-1.5 py-0.5 rounded bg-teal-DEFAULT text-white font-bold text-[10px]">1.0x</button>
-                                            <button onclick="setVideoSpeed(${lesson.number}, 1.25)" id="vspeed-125-${lesson.number}" class="px-1.5 py-0.5 rounded bg-white/10 hover:bg-white/20 text-[10px]">1.25x</button>
-                                            <button onclick="toggleVideoFullscreen(${lesson.number})" class="p-1 hover:text-teal-DEFAULT" title="ملء الشاشة">
-                                                <i data-lucide="maximize" class="w-3.5 h-3.5"></i>
-                                            </button>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- Video Chapter Markers -->
-                            <div class="p-3 bg-slate-950 border-t border-slate-800 flex items-center gap-2 overflow-x-auto text-[11px] text-slate-300">
-                                <span class="font-bold text-teal-400 flex items-center gap-1 flex-shrink-0">
-                                    <i data-lucide="list-video" class="w-3.5 h-3.5"></i> فصول الفيديو:
-                                </span>
-                                <button onclick="jumpVideoChapter(${lesson.number}, 10, 'المقدمة')" class="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 flex-shrink-0 transition">
-                                    00:00 • المقدمة والأهداف
-                                </button>
-                                <button onclick="jumpVideoChapter(${lesson.number}, 40, 'القواعد')" class="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 flex-shrink-0 transition">
-                                    02:15 • شرح القواعد (${lesson.targetGrammar.split('&')[0]})
-                                </button>
-                                <button onclick="jumpVideoChapter(${lesson.number}, 80, 'الحوار العملي')" class="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 flex-shrink-0 transition">
-                                    04:30 • استعراض المحادثات التطبيقية
-                                </button>
-                            </div>
-                        </div>
-
+                        ${renderLessonVideoBlock(lesson)}
                         <!-- 2. Interactive Audio Player (Listening Lab) -->
                         <div class="p-4 sm:p-5 rounded-2xl bg-slate-50 border border-slate-200/80 space-y-3">
                             <div class="flex items-center justify-between flex-wrap gap-2">
@@ -3955,6 +4039,7 @@ Return ONLY a valid JSON object matching this exact schema:
 
             updateLmsStats(LMS_EMPLOYEES_CACHE);
             filterLmsEmployees();
+            renderAdminVideoManager();
         }
 
         // Dynamically calculate and update high-level KPIs and Department Matrix
@@ -5253,6 +5338,535 @@ Return ONLY a valid JSON object matching this exact schema:
             const statQuizzes = document.getElementById('stat-quizzes-passed');
             if (statQuizzes) statQuizzes.innerText = `${Math.min(11, parseInt(savedQuizzes, 10))} / 11`;
         });
+    
+                // ==========================================
+        // 20. CLOUDINARY MULTI-VIDEO MANAGEMENT
+        // ==========================================
+        const CLOUDINARY_CONFIG = {
+            cloudName: "qvqba0pr",
+            uploadPreset: "ml_default",
+            uploadUrl: "https://api.cloudinary.com/v1_1/qvqba0pr/video/upload"
+        };
+
+        const STORAGE_LESSON_VIDEOS_KEY = "YSL_LESSON_VIDEOS";
+        window.activeLessonVideoIndices = window.activeLessonVideoIndices || {};
+
+        function getLessonVideosDb() {
+            try {
+                const raw = localStorage.getItem(STORAGE_LESSON_VIDEOS_KEY);
+                return raw ? JSON.parse(raw) : {};
+            } catch (e) {
+                return {};
+            }
+        }
+
+        function saveLessonVideosDb(db) {
+            try {
+                localStorage.setItem(STORAGE_LESSON_VIDEOS_KEY, JSON.stringify(db));
+            } catch (e) {
+                console.error("Failed to save lesson videos to localStorage:", e);
+            }
+        }
+
+        // Returns an array of video items for the specified lesson
+        function getLessonVideos(lessonNum) {
+            const db = getLessonVideosDb();
+            const val = db[lessonNum];
+            if (!val) return [];
+            if (Array.isArray(val)) return val;
+            // Backwards compatibility migration for legacy single-video objects
+            return [val];
+        }
+
+        // Generates a Cloudinary direct attachment download URL
+        function getCloudinaryDownloadUrl(url, filename = "") {
+            if (!url) return "";
+            if (url.includes("/video/upload/")) {
+                const cleanName = filename ? encodeURIComponent(filename.replace(/\s+/g, "_").replace(/[^a-zA-Z0-9_\u0600-\u06FF.-]/g, "")) : "";
+                const flag = cleanName ? `fl_attachment:${cleanName}/` : "fl_attachment/";
+                return url.replace("/video/upload/", `/video/upload/${flag}`);
+            }
+            return url;
+        }
+
+        let selectedVideoFile = null;
+        let currentUploadXhr = null;
+
+        function onTargetLessonChange() {
+            const select = document.getElementById("video-target-lesson");
+            if (!select) return;
+            const lessonNum = parseInt(select.value, 10);
+            const videos = getLessonVideos(lessonNum);
+            const badge = document.getElementById("lesson-existing-videos-badge");
+            if (badge) {
+                badge.innerText = videos.length > 0 ? `يحتوي حالياً على (${videos.length}) فيديوهات` : "لا توجد فيديوهات سابقة للدرس";
+            }
+            const titleInput = document.getElementById("video-custom-title");
+            if (titleInput && (!titleInput.value || titleInput.value.startsWith("فيديو ") || titleInput.value.startsWith("المحاضرة "))) {
+                const lData = LESSONS_DATA.find(l => l.number === lessonNum);
+                const nextNum = videos.length + 1;
+                titleInput.value = lData ? `المحاضرة ${nextNum}: شرح ${lData.title}` : `فيديو ${nextNum}: شرح الدرس ${lessonNum}`;
+            }
+        }
+
+        function openUploadVideoModal(preselectLesson = 1) {
+            if (!currentUser || currentUser.role !== "admin") {
+                alert("عذراً، خاصية رفع وإدارة الفيديوهات عبر Cloudinary مخصصة للمشرفين والمدراء فقط.");
+                return;
+            }
+            const modal = document.getElementById("upload-video-modal");
+            if (!modal) return;
+            const select = document.getElementById("video-target-lesson");
+            if (select) select.value = String(preselectLesson || 1);
+            onTargetLessonChange();
+            clearSelectedVideoFile();
+            const progContainer = document.getElementById("upload-progress-container");
+            if (progContainer) progContainer.classList.add("hidden");
+            const btn = document.getElementById("btn-submit-upload");
+            if (btn) {
+                btn.disabled = false;
+                btn.innerHTML = `<i data-lucide="upload-cloud" class="w-4 h-4"></i><span>بدء الرفع إلى Cloudinary</span>`;
+            }
+            modal.classList.remove("hidden");
+            lucide.createIcons();
+        }
+
+        function closeUploadVideoModal() {
+            if (currentUploadXhr) {
+                if (!confirm("جاري رفع الفيديو إلى Cloudinary حالياً، هل أنت متأكد من إلغاء العملية؟")) {
+                    return;
+                }
+                try { currentUploadXhr.abort(); } catch (e) {}
+                currentUploadXhr = null;
+            }
+            const modal = document.getElementById("upload-video-modal");
+            if (modal) modal.classList.add("hidden");
+            currentUploadXhr = null;
+            clearSelectedVideoFile();
+        }
+
+        function handleVideoFileSelected(event) {
+            const file = event.target.files && event.target.files[0];
+            if (!file) return;
+            selectedVideoFile = file;
+            const preview = document.getElementById("selected-file-preview");
+            const nameEl = document.getElementById("preview-file-name");
+            const sizeEl = document.getElementById("preview-file-size");
+            if (preview && nameEl && sizeEl) {
+                nameEl.innerText = file.name;
+                sizeEl.innerText = `${(file.size / (1024 * 1024)).toFixed(2)} MB • ${file.type || "video/mp4"}`;
+                preview.classList.remove("hidden");
+            }
+            lucide.createIcons();
+        }
+
+        function clearSelectedVideoFile() {
+            selectedVideoFile = null;
+            const input = document.getElementById("video-file-input");
+            if (input) input.value = "";
+            const preview = document.getElementById("selected-file-preview");
+            if (preview) preview.classList.add("hidden");
+        }
+
+        function startUploadVideoToCloudinary(event) {
+            event.preventDefault();
+            if (!selectedVideoFile) {
+                alert("يرجى اختيار ملف فيديو أولاً من جهازك.");
+                return;
+            }
+
+            const lessonSelect = document.getElementById("video-target-lesson");
+            const lessonNum = parseInt(lessonSelect ? lessonSelect.value : "1", 10);
+            const titleInput = document.getElementById("video-custom-title");
+            const existingVideos = getLessonVideos(lessonNum);
+            const nextIdx = existingVideos.length + 1;
+            const videoTitle = (titleInput && titleInput.value.trim()) || `فيديو ${nextIdx}: شرح الدرس ${lessonNum}`;
+
+            const progContainer = document.getElementById("upload-progress-container");
+            const bar = document.getElementById("upload-progress-bar");
+            const percentText = document.getElementById("upload-percent-text");
+            const bytesText = document.getElementById("upload-bytes-text");
+            const submitBtn = document.getElementById("btn-submit-upload");
+
+            if (progContainer) progContainer.classList.remove("hidden");
+            if (submitBtn) {
+                submitBtn.disabled = true;
+                submitBtn.innerHTML = `<span class="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin inline-block"></span><span>جارٍ الرفع إلى Cloudinary...</span>`;
+            }
+
+            const formData = new FormData();
+            formData.append("file", selectedVideoFile);
+            formData.append("upload_preset", CLOUDINARY_CONFIG.uploadPreset);
+            formData.append("folder", `english_lms/lessons/lesson_${lessonNum}`);
+
+            const xhr = new XMLHttpRequest();
+            currentUploadXhr = xhr;
+
+            xhr.open("POST", CLOUDINARY_CONFIG.uploadUrl, true);
+
+            xhr.upload.onprogress = (e) => {
+                if (e.lengthComputable) {
+                    const progress = Math.round((e.loaded / e.total) * 100);
+                    if (bar) bar.style.width = `${progress}%`;
+                    if (percentText) percentText.innerText = `${progress}%`;
+                    if (bytesText) {
+                        const transferred = (e.loaded / (1024 * 1024)).toFixed(1);
+                        const total = (e.total / (1024 * 1024)).toFixed(1);
+                        bytesText.innerText = `${transferred} MB / ${total} MB`;
+                    }
+                }
+            };
+
+            xhr.onload = () => {
+                currentUploadXhr = null;
+                if (xhr.status >= 200 && xhr.status < 300) {
+                    try {
+                        const res = JSON.parse(xhr.responseText);
+                        const downloadUrl = res.secure_url || res.url;
+                        const durationFmt = res.duration ? `${Math.floor(res.duration / 60)}:${Math.floor(res.duration % 60).toString().padStart(2, "0")}` : null;
+
+                        const newVideoItem = {
+                            id: "vid_" + Date.now() + "_" + Math.random().toString(36).substring(2, 7),
+                            title: videoTitle,
+                            fileName: selectedVideoFile.name,
+                            fileSize: `${(selectedVideoFile.size / (1024 * 1024)).toFixed(1)} MB`,
+                            fileType: selectedVideoFile.type || "video/mp4",
+                            downloadUrl: downloadUrl,
+                            publicId: res.public_id || "",
+                            format: res.format || "mp4",
+                            duration: durationFmt,
+                            uploadedAt: new Date().toLocaleString("ar-SA", { dateStyle: "short", timeStyle: "short" }),
+                            uploadedBy: currentUser ? currentUser.name : "المشرف العام"
+                        };
+
+                        const db = getLessonVideosDb();
+                        const lessonVideos = getLessonVideos(lessonNum);
+                        lessonVideos.push(newVideoItem);
+                        db[lessonNum] = lessonVideos;
+                        saveLessonVideosDb(db);
+
+                        closeUploadVideoModal();
+                        renderAdminVideoManager();
+
+                        // Set active index to the newly uploaded video
+                        window.activeLessonVideoIndices[lessonNum] = lessonVideos.length - 1;
+
+                        if (currentLessonId === lessonNum) {
+                            selectLesson(lessonNum);
+                        }
+
+                        alert(`✅ تم رفع الفيديو بنجاح عبر Cloudinary!\nأصبح الدرس ${lessonNum} يضم (${lessonVideos.length}) فيديوهات مع مشغل تفاعلي وزر تنزيل مباشر لكل فيديو.`);
+                    } catch (err) {
+                        console.error("Error parsing Cloudinary response:", err);
+                        alert("تم رفع الفيديو ولكن حدث خطأ أثناء معالجة الاستجابة: " + err.message);
+                        if (submitBtn) {
+                            submitBtn.disabled = false;
+                            submitBtn.innerHTML = `<i data-lucide="upload-cloud" class="w-4 h-4"></i><span>إعادة المحاولة</span>`;
+                        }
+                    }
+                } else {
+                    console.error("Cloudinary upload failed:", xhr.responseText);
+                    let errMsg = `فشل الرفع إلى Cloudinary (Status: ${xhr.status})`;
+                    try {
+                        const errData = JSON.parse(xhr.responseText);
+                        if (errData && errData.error && errData.error.message) {
+                            errMsg += `\nالسبب: ${errData.error.message}`;
+                        }
+                    } catch (e) {}
+                    alert(errMsg);
+                    if (submitBtn) {
+                        submitBtn.disabled = false;
+                        submitBtn.innerHTML = `<i data-lucide="upload-cloud" class="w-4 h-4"></i><span>إعادة المحاولة</span>`;
+                    }
+                    lucide.createIcons();
+                }
+            };
+
+            xhr.onerror = () => {
+                currentUploadXhr = null;
+                alert("حدث خطأ في الاتصال أثناء الرفع إلى Cloudinary. يرجى التحقق من اتصال الإنترنت.");
+                if (submitBtn) {
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = `<i data-lucide="upload-cloud" class="w-4 h-4"></i><span>إعادة المحاولة</span>`;
+                }
+                lucide.createIcons();
+            };
+
+            xhr.send(formData);
+        }
+
+        function deleteLessonVideoItem(lessonNum, videoId) {
+            if (!currentUser || currentUser.role !== "admin") {
+                alert("عذراً، حذف الفيديوهات مقتصر على المشرفين فقط.");
+                return;
+            }
+            const db = getLessonVideosDb();
+            const list = getLessonVideos(lessonNum);
+            const video = list.find(v => v.id === videoId);
+            if (!video) return;
+
+            if (confirm(`هل أنت متأكد من رغبتك في حذف هذا الفيديو من الدرس ${lessonNum}؟\n\nالعنوان: "${video.title}"`)) {
+                const filtered = list.filter(v => v.id !== videoId);
+                db[lessonNum] = filtered;
+                saveLessonVideosDb(db);
+
+                // Adjust active index
+                if (window.activeLessonVideoIndices[lessonNum] >= filtered.length) {
+                    window.activeLessonVideoIndices[lessonNum] = Math.max(0, filtered.length - 1);
+                }
+
+                renderAdminVideoManager();
+                if (currentLessonId === lessonNum) {
+                    selectLesson(lessonNum);
+                }
+                alert(`تم حذف الفيديو بنجاح. المتبقي للدرس ${lessonNum}: (${filtered.length}) فيديو.`);
+            }
+        }
+
+        function switchActiveLessonVideo(lessonNum, videoIdx) {
+            window.activeLessonVideoIndices[lessonNum] = videoIdx;
+            selectLesson(lessonNum);
+        }
+
+        function copyVideoLink(url) {
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(url).then(() => {
+                    alert("تم نسخ رابط Cloudinary المباشر إلى الحافظة بنجاح!");
+                }).catch(() => {
+                    prompt("انسخ رابط الفيديو المباشر من هنا:", url);
+                });
+            } else {
+                prompt("انسخ رابط الفيديو المباشر من هنا:", url);
+            }
+        }
+
+        function renderAdminVideoManager() {
+            const container = document.getElementById("admin-video-library-grid");
+            if (!container) return;
+
+            container.innerHTML = LESSONS_DATA.map(l => {
+                const videos = getLessonVideos(l.number);
+                const hasVideos = videos.length > 0;
+
+                return `
+                    <div class="rounded-2xl border ${hasVideos ? "border-teal-200 bg-white shadow-sm" : "border-slate-200 bg-slate-50/70"} p-4 flex flex-col justify-between space-y-3 transition hover:shadow-md">
+                        <div class="space-y-2.5">
+                            <div class="flex items-center justify-between gap-2">
+                                <span class="px-2.5 py-0.5 rounded-full text-[11px] font-bold ${hasVideos ? "bg-teal-50 text-teal-700 border border-teal-200" : "bg-slate-200 text-slate-600"}">
+                                    الدرس ${l.number}
+                                </span>
+                                ${hasVideos ? `
+                                    <span class="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
+                                        <i data-lucide="check-circle-2" class="w-3 h-3"></i>
+                                        <span>${videos.length} ${videos.length === 1 ? "فيديو مرفوع" : "فيديوهات سحابية"}</span>
+                                    </span>
+                                ` : `
+                                    <span class="inline-flex items-center gap-1 text-[10px] font-medium text-amber-700 bg-amber-50 px-2 py-0.5 rounded-full border border-amber-200">
+                                        <i data-lucide="clock" class="w-3 h-3"></i>
+                                        <span>بانتظار الرفع</span>
+                                    </span>
+                                `}
+                            </div>
+
+                            <h4 class="font-bold text-navy text-xs leading-snug">${l.title}</h4>
+
+                            ${hasVideos ? `
+                                <div class="space-y-1.5 max-h-48 overflow-y-auto pr-1">
+                                    ${videos.map((v, vIdx) => {
+                                        const dlUrl = getCloudinaryDownloadUrl(v.downloadUrl, v.title);
+                                        return `
+                                            <div class="p-2 rounded-xl bg-slate-50 border border-slate-100 text-[11px] space-y-1 hover:bg-teal-50/40 transition">
+                                                <div class="flex items-center justify-between gap-1">
+                                                    <span class="font-bold text-navy truncate flex items-center gap-1" title="${v.title}">
+                                                        <span class="w-4 h-4 rounded-full bg-teal-100 text-teal-800 text-[9px] flex items-center justify-center font-bold flex-shrink-0">${vIdx + 1}</span>
+                                                        <span class="truncate">${v.title}</span>
+                                                    </span>
+                                                    <button type="button" onclick="deleteLessonVideoItem(${l.number}, '${v.id}')" class="p-1 text-slate-400 hover:text-rose-600 transition" title="حذف هذا الفيديو">
+                                                        <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+                                                    </button>
+                                                </div>
+                                                <div class="flex items-center justify-between text-slate-400 font-mono text-[9px]">
+                                                    <span>${v.fileSize} ${v.duration ? '• ' + v.duration : ''}</span>
+                                                    <div class="flex items-center gap-1.5">
+                                                        <a href="${dlUrl}" target="_blank" download="${v.fileName}" class="text-teal-600 hover:text-teal-800 font-bold flex items-center gap-0.5" title="تنزيل مباشر">
+                                                            <i data-lucide="download" class="w-3 h-3"></i>
+                                                            <span>تنزيل</span>
+                                                        </a>
+                                                        <button type="button" onclick="copyVideoLink('${v.downloadUrl}')" class="text-slate-500 hover:text-slate-800" title="نسخ الرابط">
+                                                            <i data-lucide="share-2" class="w-3 h-3"></i>
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        `;
+                                    }).join("")}
+                                </div>
+                            ` : `
+                                <p class="text-[11px] text-slate-400 leading-relaxed">
+                                    لم يتم رفع أي فيديو لهذا الدرس حتى الآن. يمكنك رفع عدة فيديوهات للشرح عبر Cloudinary.
+                                </p>
+                            `}
+                        </div>
+
+                        <div class="pt-2 border-t border-slate-100 flex items-center gap-1.5">
+                            <button type="button" onclick="openUploadVideoModal(${l.number})" class="w-full py-2 px-3 rounded-xl bg-teal-DEFAULT hover:bg-teal-light text-white text-[11px] font-bold transition flex items-center justify-center gap-1.5 shadow-sm shadow-teal-500/10">
+                                <i data-lucide="plus-circle" class="w-3.5 h-3.5"></i>
+                                <span>${hasVideos ? "+ إضافة فيديو آخر للدرس" : "رفع أول فيديو للدرس"}</span>
+                            </button>
+                        </div>
+                    </div>
+                `;
+            }).join("");
+
+            lucide.createIcons();
+        }
+
+        function renderLessonVideoBlock(lesson) {
+            const videos = getLessonVideos(lesson.number);
+            const isAdmin = currentUser && currentUser.role === "admin";
+
+            if (videos.length > 0) {
+                let activeIdx = window.activeLessonVideoIndices[lesson.number] || 0;
+                if (activeIdx >= videos.length) activeIdx = 0;
+                const activeVideo = videos[activeIdx];
+                const directDownloadUrl = getCloudinaryDownloadUrl(activeVideo.downloadUrl, activeVideo.title || activeVideo.fileName);
+
+                return `
+                    <!-- Educational Video Player (Powered by Cloudinary CDN & Multi-Video Support) -->
+                    <div class="rounded-2xl overflow-hidden bg-slate-900 border border-slate-800 text-white shadow-md">
+                        <!-- Top Bar -->
+                        <div class="p-3 bg-slate-950/90 border-b border-slate-800 flex items-center justify-between flex-wrap gap-2 text-xs">
+                            <div class="flex items-center gap-2">
+                                <span class="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                                <span class="font-bold text-white">فيديو الشرح: الدرس ${lesson.number} (${lesson.title})</span>
+                                <span class="px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 font-mono text-[10px] border border-emerald-500/30">Cloudinary CDN</span>
+                            </div>
+                            <div class="flex items-center gap-2 text-[11px] text-slate-400">
+                                <span class="text-teal-300 font-bold">الفيديو ${activeIdx + 1} من إجمالي ${videos.length}</span>
+                                <span>•</span>
+                                <span>الحجم: <strong class="text-white">${activeVideo.fileSize || "HD"}</strong></span>
+                            </div>
+                        </div>
+
+                        <!-- HTML5 Real Video Player -->
+                        <div class="relative w-full bg-black flex items-center justify-center">
+                            <video id="lesson-html5-player-${lesson.number}" key="${activeVideo.id}" controls class="w-full max-h-[460px] object-contain bg-black shadow-inner" playsinline preload="metadata">
+                                <source src="${activeVideo.downloadUrl}" type="${activeVideo.fileType || "video/mp4"}">
+                                متصفحك لا يدعم مشغل الفيديو المباشر. يرجى استخدام زر التنزيل المباشر أدناه لمشاهدة الفيديو.
+                            </video>
+                        </div>
+
+                        <!-- Multi-Video Playlist Selector (Shown if multiple videos exist) -->
+                        ${videos.length > 1 ? `
+                            <div class="p-3 bg-slate-950/95 border-t border-slate-800 space-y-2">
+                                <div class="flex items-center justify-between text-xs text-slate-300">
+                                    <div class="flex items-center gap-1.5 font-bold text-teal-400">
+                                        <i data-lucide="layers" class="w-4 h-4"></i>
+                                        <span>قائمة محاضرات وفيديوهات الدرس (${videos.length} مقاطع متوفرة):</span>
+                                    </div>
+                                    <span class="text-[11px] text-slate-400">انقر للتبديل الفوري بين الفيديوهات</span>
+                                </div>
+                                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+                                    ${videos.map((v, vIdx) => {
+                                        const isCurrent = vIdx === activeIdx;
+                                        const itemDlUrl = getCloudinaryDownloadUrl(v.downloadUrl, v.title);
+                                        return `
+                                            <div class="rounded-xl border ${isCurrent ? "border-teal-400 bg-teal-950/50 shadow-sm shadow-teal-500/20" : "border-slate-800 bg-slate-900/80 hover:bg-slate-800"} p-2.5 flex items-center justify-between gap-2 transition cursor-pointer" onclick="switchActiveLessonVideo(${lesson.number}, ${vIdx})">
+                                                <div class="flex items-center gap-2 overflow-hidden">
+                                                    <div class="w-6 h-6 rounded-lg ${isCurrent ? "bg-teal-DEFAULT text-white" : "bg-slate-800 text-slate-400"} flex items-center justify-center text-[10px] font-black flex-shrink-0">
+                                                        ${isCurrent ? '<i data-lucide="play" class="w-3.5 h-3.5 fill-current"></i>' : (vIdx + 1)}
+                                                    </div>
+                                                    <div class="truncate">
+                                                        <span class="block text-xs font-bold ${isCurrent ? "text-teal-200" : "text-slate-200"} truncate" title="${v.title}">${v.title}</span>
+                                                        <span class="text-[10px] text-slate-400 font-mono">${v.fileSize} ${v.duration ? '• ' + v.duration : ''}</span>
+                                                    </div>
+                                                </div>
+                                                <a href="${itemDlUrl}" target="_blank" download="${v.fileName}" onclick="event.stopPropagation()" class="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-teal-300 hover:text-white transition flex-shrink-0" title="تنزيل مباشر لهذا الفيديو">
+                                                    <i data-lucide="download" class="w-3.5 h-3.5"></i>
+                                                </a>
+                                            </div>
+                                        `;
+                                    }).join("")}
+                                </div>
+                            </div>
+                        ` : ""}
+
+                        <!-- Active Video Title & Download Bar -->
+                        <div class="p-3.5 bg-slate-950 border-t border-slate-800 flex items-center justify-between flex-wrap gap-3">
+                            <div class="flex items-center gap-2 flex-wrap">
+                                <!-- Direct Download Button for Active Video (Cloudinary Direct Link) -->
+                                <a href="${directDownloadUrl}" target="_blank" download="${activeVideo.fileName || 'Lesson_' + lesson.number + '_Video_' + (activeIdx + 1) + '.mp4'}" class="px-5 py-2.5 rounded-xl bg-teal-DEFAULT hover:bg-teal-light text-white text-xs font-bold transition flex items-center gap-2 shadow-sm shadow-teal-500/20">
+                                    <i data-lucide="download" class="w-4 h-4"></i>
+                                    <span>تنزيل الفيديو المعروض مباشرة (Direct Download)</span>
+                                </a>
+                                <button type="button" onclick="copyVideoLink('${activeVideo.downloadUrl}')" class="px-3.5 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white text-xs font-semibold transition flex items-center gap-1.5" title="نسخ رابط Cloudinary">
+                                    <i data-lucide="share-2" class="w-4 h-4"></i>
+                                    <span class="hidden sm:inline">نسخ الرابط</span>
+                                </button>
+                            </div>
+
+                            <!-- Admin Controls or Student Status -->
+                            <div class="flex items-center gap-2">
+                                ${isAdmin ? `
+                                    <button type="button" onclick="openUploadVideoModal(${lesson.number})" class="px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-teal-300 text-xs font-semibold transition flex items-center gap-1.5 border border-slate-700">
+                                        <i data-lucide="plus-circle" class="w-3.5 h-3.5"></i>
+                                        <span>+ إضافة فيديو آخر للدرس</span>
+                                    </button>
+                                    <button type="button" onclick="deleteLessonVideoItem(${lesson.number}, '${activeVideo.id}')" class="p-2 rounded-xl bg-rose-950/40 hover:bg-rose-900/60 text-rose-300 hover:text-rose-200 text-xs transition border border-rose-800/40" title="حذف هذا الفيديو">
+                                        <i data-lucide="trash-2" class="w-4 h-4"></i>
+                                    </button>
+                                ` : `
+                                    <div class="text-[11px] text-slate-400 flex items-center gap-1.5">
+                                        <i data-lucide="check-circle" class="w-3.5 h-3.5 text-emerald-400"></i>
+                                        <span>جاهز للمشاهدة والتنزيل المباشر من Cloudinary CDN</span>
+                                    </div>
+                                `}
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+
+            // Fallback State when no videos have been uploaded yet
+            return `
+                <!-- Educational Video Player (No Videos Uploaded Yet) -->
+                <div class="rounded-2xl overflow-hidden bg-slate-900 border border-slate-800 text-white shadow-md">
+                    <div class="p-3 bg-slate-950/90 border-b border-slate-800 flex items-center justify-between flex-wrap gap-2 text-xs">
+                        <div class="flex items-center gap-2">
+                            <span class="w-2.5 h-2.5 rounded-full bg-amber-400 animate-pulse"></span>
+                            <span class="font-bold text-white">فيديوهات الشرح: الدرس ${lesson.number} (${lesson.title})</span>
+                            <span class="px-2 py-0.5 rounded bg-amber-500/20 text-amber-300 font-mono text-[10px] border border-amber-500/30">بانتظار الرفع</span>
+                        </div>
+                        <div class="flex items-center gap-2 text-[11px] text-slate-400">
+                            <span class="text-teal-400 font-semibold">مادة تدريبية معتمدة (Cloudinary)</span>
+                        </div>
+                    </div>
+
+                    <div class="p-8 sm:p-10 text-center space-y-4 bg-gradient-to-br from-slate-950 via-slate-900 to-navy">
+                        <div class="w-16 h-16 mx-auto rounded-2xl bg-teal-DEFAULT/20 border border-teal-DEFAULT/40 flex items-center justify-center text-teal-400 shadow-inner">
+                            <i data-lucide="video" class="w-8 h-8"></i>
+                        </div>
+                        <div class="space-y-1.5 max-w-md mx-auto">
+                            <h5 class="text-base font-bold text-white en-font" dir="ltr">${lesson.title}: Video Masterclass</h5>
+                            <p class="text-xs text-slate-300 leading-relaxed">
+                                ${isAdmin
+                                  ? "بصفتك مشرف المنصة، يمكنك الآن رفع فيديو أو عدة فيديوهات للشرح مباشرة من جهازك وتخزينها سحابياً عبر Cloudinary لتتاح للطلاب فوراً مع مشغل تفاعلي وزر تنزيل مباشر لكل فيديو."
+                                  : "لم يقم المشرف برفع مقاطع فيديو لهذا الدرس حتى الآن. يمكنك متابعة دراسة القواعد وحل الأنشطة التفاعلية والاستماع للمختبر الصوتي أدناه."}
+                            </p>
+                        </div>
+                        ${isAdmin ? `
+                            <div class="pt-2">
+                                <button type="button" onclick="openUploadVideoModal(${lesson.number})" class="px-5 py-2.5 rounded-xl bg-teal-DEFAULT hover:bg-teal-light text-white text-xs font-bold transition shadow-sm inline-flex items-center gap-2">
+                                    <i data-lucide="upload-cloud" class="w-4 h-4"></i>
+                                    <span>رفع أول فيديو للدرس ${lesson.number} (Cloudinary)</span>
+                                </button>
+                            </div>
+                        ` : ""}
+                    </div>
+                </div>
+            `;
+        }
+
     </script>
 </body>
 </html>
