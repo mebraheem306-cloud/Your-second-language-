@@ -1011,7 +1011,12 @@
                         <!-- Add New Learner Button -->
                         <button onclick="openAddUserModal()" class="px-3.5 py-2 rounded-xl bg-teal-DEFAULT hover:bg-teal-light text-white text-xs font-bold transition flex items-center gap-1.5 shadow-md shadow-teal-DEFAULT/20 flex-shrink-0">
                             <i data-lucide="user-plus" class="w-4 h-4"></i>
-                            <span>+ إضافة متعلم جديد</span>
+                            <span>+ إضافة موظف مفرد</span>
+                        </button>
+                        <!-- Bulk Import Button (Up to 400+ Employees) -->
+                        <button onclick="openBulkAddModal()" class="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-white text-xs font-bold transition flex items-center gap-1.5 shadow-md flex-shrink-0 border border-slate-700">
+                            <i data-lucide="file-spreadsheet" class="w-4 h-4 text-teal-400"></i>
+                            <span>إضافة جماعية (Bulk Import 400+)</span>
                         </button>
 
                         <!-- Search Box -->
@@ -1097,7 +1102,7 @@
                             <span>إدارة ورفع فيديوهات الدروس (Video Library)</span>
                         </h3>
                         <p class="text-xs text-slate-500 mt-1 max-w-2xl leading-relaxed">
-                            رفع وتحديث مقاطع الفيديو التدريبية المتعددة للدروس الـ 11 مباشرة من جهازك وتخزينها سحابياً عبر Cloudinary (<code class="font-mono text-teal-700 font-bold" dir="ltr">qvqba0pr / ml_default</code>)، مع دعم رفع أكثر من فيديو لكل درس ومشغل تفاعلي وزر تنزيل مباشر للطلاب.
+                            رفع وتحديث مقاطع الفيديو التدريبية للدروس الـ 11 مباشرة من جهازك إلى سلة <code class="font-mono text-teal-700 font-bold" dir="ltr">videos</code> في Supabase Storage وحفظها في جدول <code class="font-mono text-teal-700 font-bold" dir="ltr">ysl_lesson_videos</code>، مع مشغل تفاعلي وزر تنزيل مباشر للطلاب.
                         </p>
                     </div>
 
@@ -1141,10 +1146,22 @@
             </div>
 
             <form onsubmit="handleCreateNewUser(event)" class="space-y-3.5 text-xs">
-                <div>
-                    <label class="font-bold text-navy block mb-1">الاسم الكامل للمتعلم (Full Name):</label>
-                    <input type="text" id="new-user-fullname" required oninput="suggestUsername(this.value)" placeholder="مثال: خالد بن فهد الشمري"
-                        class="w-full p-2.5 rounded-xl border border-slate-300 text-xs focus:ring-2 focus:ring-teal-DEFAULT outline-none">
+                <!-- Manual Employee ID & Full Name -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                        <div class="flex items-center justify-between mb-1">
+                            <label class="font-bold text-navy">الرقم الوظيفي (Employee ID) <span class="text-rose-500">*</span>:</label>
+                            <span class="text-[10px] text-teal-600 font-mono font-bold">حقل يدوي فريد</span>
+                        </div>
+                        <input type="text" id="new-user-empid" required placeholder="مثال: 1042 أو EMP-205" dir="ltr"
+                            class="w-full p-2.5 rounded-xl border border-slate-300 text-xs font-mono font-bold text-teal-800 bg-slate-50/50 focus:bg-white focus:ring-2 focus:ring-teal-DEFAULT outline-none">
+                        <p class="text-[10px] text-slate-400 mt-0.5">يُحفظ مباشرة في عمود id بجدول ysl_accounts في Supabase</p>
+                    </div>
+                    <div>
+                        <label class="font-bold text-navy block mb-1">الاسم الكامل للموظف (Full Name) <span class="text-rose-500">*</span>:</label>
+                        <input type="text" id="new-user-fullname" required oninput="suggestUsername(this.value)" placeholder="مثال: خالد بن فهد الشمري"
+                            class="w-full p-2.5 rounded-xl border border-slate-300 text-xs focus:ring-2 focus:ring-teal-DEFAULT outline-none">
+                    </div>
                 </div>
 
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -1210,6 +1227,150 @@
         </div>
     </div>
 
+    <!-- 1.05 Bulk Import Employees Modal (Up to 400+) -->
+    <div id="bulk-add-modal" class="fixed inset-0 z-50 bg-black/65 backdrop-blur-sm hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-3xl max-w-2xl w-full p-6 sm:p-7 space-y-5 shadow-2xl border border-slate-100 max-h-[92vh] overflow-y-auto custom-scrollbar animate-fade-in">
+            <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+                <div class="flex items-center gap-2.5">
+                    <div class="p-2.5 rounded-xl bg-teal-50 text-teal-600">
+                        <i data-lucide="file-spreadsheet" class="w-6 h-6"></i>
+                    </div>
+                    <div>
+                        <h3 class="font-extrabold text-navy text-base sm:text-lg">الإضافة الجماعية للموظفين (Bulk Import 400+)</h3>
+                        <p class="text-xs text-slate-500">لصق قائمة أو رفع ملف CSV لحفظ مئات الموظفين مباشرة في جدول ysl_accounts بـ Supabase</p>
+                    </div>
+                </div>
+                <button type="button" onclick="closeBulkAddModal()" class="text-slate-400 hover:text-slate-600 p-1">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+
+            <!-- Tab Switcher between Paste Text and Upload File -->
+            <div class="flex items-center gap-2 p-1 bg-slate-100 rounded-xl text-xs font-bold">
+                <button type="button" id="bulk-tab-paste" onclick="switchBulkTab('paste')" class="flex-1 py-2 px-3 rounded-lg bg-white text-navy shadow-sm transition">
+                    📋 لصق القائمة مباشرة (Paste Text / TSV / Excel)
+                </button>
+                <button type="button" id="bulk-tab-file" onclick="switchBulkTab('file')" class="flex-1 py-2 px-3 rounded-lg text-slate-600 hover:text-navy transition">
+                    📁 رفع ملف CSV / Excel
+                </button>
+            </div>
+
+            <!-- Format Instructions Box -->
+            <div class="p-3.5 rounded-2xl bg-teal-50/70 border border-teal-200 text-xs space-y-2">
+                <div class="flex items-center justify-between flex-wrap gap-2">
+                    <div class="font-bold text-navy flex items-center gap-1.5">
+                        <i data-lucide="info" class="w-4 h-4 text-teal-600"></i>
+                        <span>ترتيب الأعمدة المطلوب في كل سطر:</span>
+                    </div>
+                    <button type="button" onclick="downloadSampleCsv()" class="px-2.5 py-1 rounded-lg bg-teal-600 hover:bg-teal-700 text-white text-[11px] font-bold transition flex items-center gap-1 shadow-sm">
+                        <i data-lucide="download" class="w-3.5 h-3.5"></i>
+                        <span>تحميل نموذج CSV جاهز</span>
+                    </button>
+                </div>
+                <div class="p-2 rounded-xl bg-white border border-teal-200/60 font-mono text-[11px] text-slate-700 overflow-x-auto" dir="ltr">
+                    الرقم الوظيفي, الاسم الكامل, اسم المستخدم, كلمة المرور, البريد الإلكتروني, القسم
+                </div>
+                <p class="text-[11px] text-slate-500 leading-relaxed">
+                    يدعم الفاصلة العادية (<code>,</code>) أو الفاصلة المنقوطة (<code>;</code>) أو مسافات الجدولة التلقائية عند النسخ من <strong>Microsoft Excel</strong> أو <strong>Google Sheets</strong>.
+                </p>
+            </div>
+
+            <!-- Paste Input Mode -->
+            <div id="bulk-paste-container" class="space-y-1.5">
+                <label class="block text-xs font-bold text-navy">الصق بيانات الموظفين هنا (حتى 400+ موظف):</label>
+                <textarea id="bulk-raw-text" rows="8" placeholder="1001,خالد الشمري,khalid.shammari,pass123,khalid@company.sa,خدمة العملاء&#10;1002,سارة العتيبي,sara.otaibi,pass456,sara@company.sa,الموارد البشرية&#10;1003,عبدالله القحطاني,abdullah.q,pass789,abdullah@company.sa,تقنية المعلومات" class="w-full p-3 rounded-2xl border border-slate-300 text-xs font-mono text-slate-800 bg-slate-50/50 focus:bg-white focus:ring-2 focus:ring-teal-DEFAULT outline-none custom-scrollbar leading-relaxed" dir="ltr"></textarea>
+            </div>
+
+            <!-- Upload File Mode -->
+            <div id="bulk-file-container" class="hidden space-y-1.5">
+                <label class="block text-xs font-bold text-navy">اختر ملف CSV من جهازك:</label>
+                <div class="border-2 border-dashed border-slate-300 hover:border-teal-DEFAULT rounded-2xl p-6 text-center transition bg-slate-50/40 hover:bg-teal-50/20 cursor-pointer" onclick="document.getElementById('bulk-file-input').click()">
+                    <input type="file" id="bulk-file-input" accept=".csv,.txt,.tsv" class="hidden" onchange="handleBulkFileSelected(event)">
+                    <div class="space-y-2">
+                        <div class="w-12 h-12 mx-auto rounded-full bg-teal-100 text-teal-DEFAULT flex items-center justify-center">
+                            <i data-lucide="upload-cloud" class="w-6 h-6"></i>
+                        </div>
+                        <div class="text-xs text-slate-700 font-medium">
+                            <span class="font-bold text-teal-700 hover:underline">انقر لاختيار ملف CSV</span> أو اسحب الملف هنا
+                        </div>
+                        <p id="bulk-selected-file-label" class="text-[11px] text-slate-400 font-mono">يدعم ملفات .csv و .txt الصادرة من إكسل</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Preview & Validation Report Section -->
+            <div id="bulk-preview-section" class="hidden space-y-3 p-4 rounded-2xl bg-slate-50 border border-slate-200">
+                <div class="flex items-center justify-between flex-wrap gap-2">
+                    <h4 class="font-bold text-xs text-navy flex items-center gap-1.5">
+                        <i data-lucide="check-check" class="w-4 h-4 text-teal-600"></i>
+                        <span>تقرير فحص ومعاينة السجلات:</span>
+                    </h4>
+                    <div class="flex items-center gap-2 text-xs">
+                        <span id="bulk-count-valid" class="px-2.5 py-0.5 rounded-full font-bold bg-emerald-100 text-emerald-800 border border-emerald-200 text-[11px]">
+                            0 جاهز للإضافة
+                        </span>
+                        <span id="bulk-count-invalid" class="px-2.5 py-0.5 rounded-full font-bold bg-rose-100 text-rose-800 border border-rose-200 text-[11px]">
+                            0 متجاهل / مكرر
+                        </span>
+                    </div>
+                </div>
+
+                <!-- Issues / Duplicates explanation if any -->
+                <div id="bulk-issues-container" class="hidden max-h-28 overflow-y-auto p-2.5 rounded-xl bg-rose-50 border border-rose-200 text-[11px] text-rose-800 space-y-1 font-mono"></div>
+
+                <!-- Preview Table (first 10 records) -->
+                <div class="max-h-48 overflow-y-auto border border-slate-200 rounded-xl bg-white shadow-inner">
+                    <table class="w-full text-[11px] text-right">
+                        <thead class="bg-slate-100 text-slate-600 font-bold sticky top-0 border-b border-slate-200">
+                            <tr>
+                                <th class="p-2">#</th>
+                                <th class="p-2">الرقم الوظيفي (ID)</th>
+                                <th class="p-2">الاسم الكامل</th>
+                                <th class="p-2">اسم المستخدم</th>
+                                <th class="p-2">كلمة المرور</th>
+                                <th class="p-2">القسم</th>
+                                <th class="p-2">الحالة</th>
+                            </tr>
+                        </thead>
+                        <tbody id="bulk-preview-tbody" class="divide-y divide-slate-100"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Upload / Progress Bar -->
+            <div id="bulk-progress-container" class="hidden space-y-2 p-3.5 rounded-2xl bg-slate-900 text-white">
+                <div class="flex items-center justify-between text-xs">
+                    <span class="font-bold text-teal-300 flex items-center gap-2">
+                        <span class="w-2 h-2 rounded-full bg-teal-400 animate-ping"></span>
+                        <span id="bulk-progress-label">جارٍ الحفظ في Supabase...</span>
+                    </span>
+                    <span id="bulk-progress-percent" class="font-mono text-teal-400 font-bold">0%</span>
+                </div>
+                <div class="w-full bg-slate-800 h-2 rounded-full overflow-hidden">
+                    <div id="bulk-progress-bar" class="bg-gradient-to-r from-teal-DEFAULT to-teal-light h-full w-0 transition-all duration-150"></div>
+                </div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="flex items-center justify-between pt-2 border-t border-slate-100 flex-wrap gap-2">
+                <button type="button" onclick="previewBulkImport()" class="px-5 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition flex items-center gap-1.5">
+                    <i data-lucide="eye" class="w-4 h-4 text-teal-600"></i>
+                    <span>معاينة وتحليل السجلات</span>
+                </button>
+                <div class="flex items-center gap-2">
+                    <button type="button" onclick="closeBulkAddModal()" class="px-5 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition">
+                        إلغاء
+                    </button>
+                    <button type="button" id="btn-execute-bulk-save" onclick="executeBulkSaveToSupabase()" class="px-6 py-2.5 rounded-xl bg-teal-DEFAULT hover:bg-teal-light text-white text-xs font-bold transition shadow-sm shadow-teal-500/20 flex items-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed">
+                        <i data-lucide="cloud-upload" class="w-4 h-4"></i>
+                        <span>حفظ الكل في Supabase الآن</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    
     <!-- 1.1 Credentials Viewer & Reset Modal (Admin) -->
     <div id="credentials-modal" class="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm hidden flex items-center justify-center p-4">
         <div class="bg-white rounded-3xl max-w-md w-full p-6 space-y-4 shadow-2xl border border-slate-100">
@@ -1342,8 +1503,8 @@
                         <i data-lucide="cloud-upload" class="w-5 h-5"></i>
                     </div>
                     <div>
-                        <h3 class="font-black text-navy text-base sm:text-lg">رفع فيديو تعليمي عبر Cloudinary</h3>
-                        <p class="text-xs text-slate-500">رفع سحابي مباشر مع دعم إضافة أكثر من فيديو لكل درس وزر تنزيل مباشر للطلاب</p>
+                        <h3 class="font-black text-navy text-base sm:text-lg">رفع فيديو تعليمي إلى Supabase Storage</h3>
+                        <p class="text-xs text-slate-500">رفع ملفات الفيديو إلى سلة videos وتوليد الرابط وحفظه في جدول ysl_lesson_videos</p>
                     </div>
                 </div>
                 <button type="button" onclick="closeUploadVideoModal()" class="w-8 h-8 rounded-full hover:bg-slate-100 flex items-center justify-center text-slate-400 hover:text-slate-600 transition">
@@ -1351,7 +1512,7 @@
                 </button>
             </div>
 
-            <form id="upload-video-form" onsubmit="startUploadVideoToCloudinary(event)" class="space-y-4">
+            <form id="upload-video-form" onsubmit="startUploadVideoToSupabaseStorage(event)" class="space-y-4">
                 <!-- Lesson Selection & Status -->
                 <div class="space-y-1.5">
                     <div class="flex items-center justify-between">
@@ -1418,7 +1579,7 @@
                     <div class="flex items-center justify-between text-xs">
                         <div class="flex items-center gap-2">
                             <span class="w-2 h-2 rounded-full bg-teal-400 animate-ping"></span>
-                            <span class="font-bold text-teal-300">جارٍ الرفع السحابي إلى Cloudinary...</span>
+                            <span class="font-bold text-teal-300">جارٍ الرفع إلى سلة videos في Supabase Storage...</span>
                         </div>
                         <span id="upload-percent-text" class="font-mono font-bold text-teal-400">0%</span>
                     </div>
@@ -1427,18 +1588,18 @@
                     </div>
                     <div class="flex items-center justify-between text-[10px] text-slate-400 font-mono">
                         <span id="upload-bytes-text">0.0 MB / 0.0 MB</span>
-                        <span id="upload-bucket-target" class="text-teal-400">Cloud Name: qvqba0pr • Preset: ml_default</span>
+                        <span id="upload-bucket-target" class="text-teal-400">Supabase Storage: videos bucket</span>
                     </div>
                 </div>
 
-                <!-- Cloudinary Info Note -->
-                <div class="p-3 rounded-xl bg-slate-50 border border-slate-200 text-[11px] text-slate-600 space-y-1">
+                <!-- Supabase Storage Info Note -->
+                <div class="p-3 rounded-xl bg-teal-50/70 border border-teal-200 text-[11px] text-slate-600 space-y-1">
                     <div class="flex items-center gap-1.5 font-bold text-navy">
-                        <i data-lucide="zap" class="w-3.5 h-3.5 text-teal-600"></i>
-                        <span>تأكيد الربط بـ Cloudinary:</span>
+                        <i data-lucide="database" class="w-3.5 h-3.5 text-teal-600"></i>
+                        <span>سلة التخزين المستهدفة: <code class="text-teal-800 font-mono font-bold" dir="ltr">videos</code> في Supabase Storage</span>
                     </div>
-                    <p class="leading-relaxed text-slate-500">
-                        يتم الرفع المباشر عبر السحابة إلى حسابك: <code class="text-teal-700 font-mono font-bold" dir="ltr">qvqba0pr</code> باستخدام الـ Preset <code class="text-teal-700 font-mono font-bold" dir="ltr">ml_default</code>. يتم حفظ كل فيديو يرفعه المشرف ضمن قائمة فيديوهات الدرس مع إتاحة مشغل تفاعلي وزر تنزيل مباشر لكل فيديو.
+                    <p class="leading-relaxed text-slate-600">
+                        يتم رفع ملف الفيديو الفعلي من جهازك إلى سلة <code class="text-teal-700 font-mono font-bold" dir="ltr">videos</code>، ثم أخذ الرابط العام المباشر وحفظه مع العنوان في جدول <code class="text-teal-700 font-mono font-bold" dir="ltr">ysl_lesson_videos</code> ليعمل المشغل وزر التنزيل المباشر فوراً للجميع.
                     </p>
                 </div>
 
@@ -1449,7 +1610,7 @@
                     </button>
                     <button type="submit" id="btn-submit-upload" class="px-6 py-2.5 rounded-xl bg-teal-DEFAULT hover:bg-teal-light text-white text-xs font-bold transition shadow-sm shadow-teal-500/20 flex items-center gap-1.5">
                         <i data-lucide="upload-cloud" class="w-4 h-4"></i>
-                        <span>بدء الرفع إلى Cloudinary</span>
+                        <span>بدء الرفع إلى سلة videos</span>
                     </button>
                 </div>
             </form>
@@ -1582,7 +1743,25 @@ ALTER TABLE ysl_lesson_videos ENABLE ROW LEVEL SECURITY;
 
 CREATE POLICY "Allow public read-write on ysl_accounts" ON ysl_accounts FOR ALL USING (true) WITH CHECK (true);
 CREATE POLICY "Allow public read-write on ysl_progress" ON ysl_progress FOR ALL USING (true) WITH CHECK (true);
-CREATE POLICY "Allow public read-write on ysl_lesson_videos" ON ysl_lesson_videos FOR ALL USING (true) WITH CHECK (true);</pre>
+CREATE POLICY "Allow public read-write on ysl_lesson_videos" ON ysl_lesson_videos FOR ALL USING (true) WITH CHECK (true);
+
+-- 4. إعدادات وسياسات سلة تخزين الفيديوهات (Supabase Storage: videos bucket)
+-- تأكد من إنشاء سلة في قسم Storage باسم: videos
+INSERT INTO storage.buckets (id, name, public) 
+VALUES ('videos', 'videos', true)
+ON CONFLICT (id) DO UPDATE SET public = true;
+
+CREATE POLICY "Allow public read on videos bucket" 
+ON storage.objects FOR SELECT 
+USING (bucket_id = 'videos');
+
+CREATE POLICY "Allow public upload to videos bucket" 
+ON storage.objects FOR INSERT 
+WITH CHECK (bucket_id = 'videos');
+
+CREATE POLICY "Allow public delete on videos bucket" 
+ON storage.objects FOR DELETE 
+USING (bucket_id = 'videos');</pre>
             </div>
 
             <div class="flex items-center justify-between pt-2 border-t border-slate-100">
@@ -6508,7 +6687,922 @@ Return ONLY a valid JSON object matching this exact schema:
             initSupabaseClient();
         });
 
-    </script>
+    
+
+        // ==========================================
+        // 22. DIRECT SUPABASE EMPLOYEE MANAGEMENT & BULK IMPORT
+        // ==========================================
+
+        let bulkParsedValidAccounts = [];
+        let bulkParsedInvalidAccounts = [];
+
+        // 1. Download Sample CSV Template
+        function downloadSampleCsv() {
+            const csvRows = [
+                "الرقم الوظيفي,الاسم,اسم المستخدم,كلمة المرور,البريد,القسم",
+                "1001,خالد بن فهد الشمري,khalid.shammari,Pass@1001,khalid@company.sa,خدمة العملاء",
+                "1002,سارة بنت منصور العتيبي,sara.otaibi,Pass@1002,sara@company.sa,الموارد البشرية",
+                "1003,عبدالله بن سعد القحطاني,abdullah.q,Pass@1003,abdullah@company.sa,تقنية المعلومات",
+                "1004,نورة بنت محمد الدوسري,noura.d,Pass@1004,noura@company.sa,المبيعات والتسويق",
+                "1005,فيصل بن تركي الحربي,faisal.h,Pass@1005,faisal@company.sa,العمليات واللوجستيات"
+            ];
+            const content = "\uFEFF" + csvRows.join("\n");
+            const blob = new Blob([content], { type: "text/csv;charset=utf-8;" });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement("a");
+            a.href = url;
+            a.download = "نموذج_إضافة_الموظفين_الجماعي.csv";
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+
+        function openBulkAddModal() {
+            if (!currentUser || currentUser.role !== "admin") {
+                alert("خاصية الإضافة الجماعية مخصصة للمشرفين والمدراء فقط.");
+                return;
+            }
+            const modal = document.getElementById("bulk-add-modal");
+            if (!modal) return;
+            bulkParsedValidAccounts = [];
+            bulkParsedInvalidAccounts = [];
+            const rawText = document.getElementById("bulk-raw-text");
+            if (rawText) rawText.value = "";
+            const fileInput = document.getElementById("bulk-file-input");
+            if (fileInput) fileInput.value = "";
+            const fileLabel = document.getElementById("bulk-selected-file-label");
+            if (fileLabel) fileLabel.innerText = "يدعم ملفات .csv و .txt الصادرة من إكسل";
+            const previewSec = document.getElementById("bulk-preview-section");
+            if (previewSec) previewSec.classList.add("hidden");
+            const progSec = document.getElementById("bulk-progress-container");
+            if (progSec) progSec.classList.add("hidden");
+            const btnSave = document.getElementById("btn-execute-bulk-save");
+            if (btnSave) {
+                btnSave.disabled = true;
+                btnSave.innerHTML = `<i data-lucide="cloud-upload" class="w-4 h-4"></i><span>حفظ الكل في Supabase الآن</span>`;
+            }
+            switchBulkTab("paste");
+            modal.classList.remove("hidden");
+            if (window.lucide) lucide.createIcons();
+        }
+
+        function closeBulkAddModal() {
+            const modal = document.getElementById("bulk-add-modal");
+            if (modal) modal.classList.add("hidden");
+        }
+
+        function switchBulkTab(tab) {
+            const pasteContainer = document.getElementById("bulk-paste-container");
+            const fileContainer = document.getElementById("bulk-file-container");
+            const tabPaste = document.getElementById("bulk-tab-paste");
+            const tabFile = document.getElementById("bulk-tab-file");
+
+            if (tab === "paste") {
+                if (pasteContainer) pasteContainer.classList.remove("hidden");
+                if (fileContainer) fileContainer.classList.add("hidden");
+                if (tabPaste) {
+                    tabPaste.className = "flex-1 py-2 px-3 rounded-lg bg-white text-navy shadow-sm transition";
+                }
+                if (tabFile) {
+                    tabFile.className = "flex-1 py-2 px-3 rounded-lg text-slate-600 hover:text-navy transition";
+                }
+            } else {
+                if (pasteContainer) pasteContainer.classList.add("hidden");
+                if (fileContainer) fileContainer.classList.remove("hidden");
+                if (tabFile) {
+                    tabFile.className = "flex-1 py-2 px-3 rounded-lg bg-white text-navy shadow-sm transition";
+                }
+                if (tabPaste) {
+                    tabPaste.className = "flex-1 py-2 px-3 rounded-lg text-slate-600 hover:text-navy transition";
+                }
+            }
+        }
+
+        function handleBulkFileSelected(event) {
+            const file = event.target.files && event.target.files[0];
+            if (!file) return;
+            const fileLabel = document.getElementById("bulk-selected-file-label");
+            if (fileLabel) {
+                fileLabel.innerText = `تم اختيار الملف: ${file.name} (${(file.size / 1024).toFixed(1)} KB)`;
+                fileLabel.className = "text-[11px] text-teal-700 font-bold font-mono";
+            }
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const text = e.target.result;
+                const rawText = document.getElementById("bulk-raw-text");
+                if (rawText) rawText.value = text;
+                // Automatically run preview
+                previewBulkImport();
+            };
+            reader.readAsText(file);
+        }
+
+        // Parse lines supporting CSV, TSV (Excel copy), and Semicolon delimiters
+        function parseBulkRawText(text) {
+            if (!text || !text.trim()) return [];
+            const lines = text.split(/\r?\n/).map(l => l.trim()).filter(l => l.length > 0);
+            const results = [];
+            let isFirst = true;
+
+            for (let line of lines) {
+                // Determine delimiter
+                let parts;
+                if (line.includes("\t")) {
+                    parts = line.split("\t");
+                } else if (line.includes(";")) {
+                    parts = line.split(";");
+                } else {
+                    parts = line.split(",");
+                }
+
+                parts = parts.map(p => p.trim().replace(/^["']|["']$/g, ""));
+
+                if (isFirst) {
+                    isFirst = false;
+                    const joined = parts.join(" ").toLowerCase();
+                    if (joined.includes("الرقم") || joined.includes("id") || joined.includes("اسم المستخدم") || joined.includes("username")) {
+                        continue; // Skip header line
+                    }
+                }
+
+                if (parts.length >= 2) {
+                    const empId = parts[0] ? parts[0].trim() : "";
+                    const name = parts[1] ? parts[1].trim() : "";
+                    const username = parts[2] ? parts[2].trim().toLowerCase() : (empId ? "user_" + empId : "");
+                    const password = parts[3] ? parts[3].trim() : "pass1234";
+                    const email = parts[4] ? parts[4].trim() : `${username}@company.sa`;
+                    const dept = parts[5] ? parts[5].trim() : "العامة";
+
+                    results.push({
+                        id: empId,
+                        name: name,
+                        username: username,
+                        password: password,
+                        email: email,
+                        dept: dept,
+                        role: "learner"
+                    });
+                }
+            }
+            return results;
+        }
+
+        async function previewBulkImport() {
+            const rawText = (document.getElementById("bulk-raw-text")?.value || "").trim();
+            if (!rawText) {
+                alert("يرجى لصق قائمة الموظفين أو اختيار ملف CSV أولاً.");
+                return;
+            }
+
+            const parsed = parseBulkRawText(rawText);
+            if (parsed.length === 0) {
+                alert("لم يتم العثور على أسطر صالحة. تأكد من تنسيق البيانات:\nالرقم الوظيفي, الاسم, اسم المستخدم, كلمة المرور, البريد, القسم");
+                return;
+            }
+
+            // Fetch existing accounts from Supabase to check duplicates
+            let existingDbIds = new Set();
+            let existingDbUsernames = new Set();
+
+            if (supabaseClient) {
+                try {
+                    const { data: currentDbAccounts } = await supabaseClient
+                        .from("ysl_accounts")
+                        .select("id, username");
+                    if (currentDbAccounts) {
+                        currentDbAccounts.forEach(a => {
+                            if (a.id) existingDbIds.add(String(a.id).trim().toLowerCase());
+                            if (a.username) existingDbUsernames.add(String(a.username).trim().toLowerCase());
+                        });
+                    }
+                } catch (e) {
+                    console.warn("Could not query existing accounts for duplicate check:", e);
+                }
+            } else {
+                LMS_EMPLOYEES_CACHE.forEach(e => {
+                    if (e.id) existingDbIds.add(String(e.id).trim().toLowerCase());
+                    if (e.username) existingDbUsernames.add(String(e.username).trim().toLowerCase());
+                });
+            }
+
+            const seenBatchIds = new Set();
+            const seenBatchUsernames = new Set();
+
+            bulkParsedValidAccounts = [];
+            bulkParsedInvalidAccounts = [];
+
+            parsed.forEach((row, idx) => {
+                const rowNum = idx + 1;
+                const idLower = row.id.toLowerCase();
+                const userLower = row.username.toLowerCase();
+
+                if (!row.id) {
+                    bulkParsedInvalidAccounts.push({ rowNum, row, reason: "الرقم الوظيفي مفقود" });
+                } else if (!row.name) {
+                    bulkParsedInvalidAccounts.push({ rowNum, row, reason: "اسم الموظف مفقود" });
+                } else if (!row.username) {
+                    bulkParsedInvalidAccounts.push({ rowNum, row, reason: "اسم المستخدم مفقود" });
+                } else if (seenBatchIds.has(idLower)) {
+                    bulkParsedInvalidAccounts.push({ rowNum, row, reason: `رقم وظيفي (${row.id}) مكرر داخل القائمة` });
+                } else if (seenBatchUsernames.has(userLower)) {
+                    bulkParsedInvalidAccounts.push({ rowNum, row, reason: `اسم مستخدم (${row.username}) مكرر داخل القائمة` });
+                } else if (existingDbIds.has(idLower)) {
+                    bulkParsedInvalidAccounts.push({ rowNum, row, reason: `هذا الرقم الوظيفي (${row.id}) مسجل لموظف آخر مسبقاً` });
+                } else if (existingDbUsernames.has(userLower)) {
+                    bulkParsedInvalidAccounts.push({ rowNum, row, reason: `اسم المستخدم (${row.username}) مسجل لموظف آخر مسبقاً` });
+                } else {
+                    seenBatchIds.add(idLower);
+                    seenBatchUsernames.add(userLower);
+                    const numMatch = row.id.match(/\d+/);
+                    const parsedNumber = numMatch ? parseInt(numMatch[0], 10) : 0;
+                    const initials = row.name.split(" ").map(w => w.charAt(0)).slice(0, 2).join("");
+
+                    bulkParsedValidAccounts.push({
+                        id: row.id,
+                        number: parsedNumber,
+                        username: row.username,
+                        password: row.password,
+                        name: row.name,
+                        email: row.email,
+                        dept: row.dept,
+                        role: "learner",
+                        avatar: initials || "مو",
+                        created_at: new Date().toISOString()
+                    });
+                }
+            });
+
+            // Update UI Preview Section
+            const previewSec = document.getElementById("bulk-preview-section");
+            const countValidEl = document.getElementById("bulk-count-valid");
+            const countInvalidEl = document.getElementById("bulk-count-invalid");
+            const issuesContainer = document.getElementById("bulk-issues-container");
+            const previewTbody = document.getElementById("bulk-preview-tbody");
+            const btnSave = document.getElementById("btn-execute-bulk-save");
+
+            if (previewSec) previewSec.classList.remove("hidden");
+            if (countValidEl) countValidEl.innerText = `${bulkParsedValidAccounts.length} سجل صالح للإضافة`;
+            if (countInvalidEl) countInvalidEl.innerText = `${bulkParsedInvalidAccounts.length} متجاهل / مكرر`;
+
+            if (issuesContainer) {
+                if (bulkParsedInvalidAccounts.length > 0) {
+                    issuesContainer.classList.remove("hidden");
+                    issuesContainer.innerHTML = `
+                        <div class="font-bold mb-1 text-rose-900">⚠️ تنبيه التكرارات ونقص البيانات (لن يتم استبدال أي موظف قديم):</div>
+                        ${bulkParsedInvalidAccounts.slice(0, 15).map(inv => `
+                            <div>سطر ${inv.rowNum}: [${inv.row.id || "بدون رقم"}] ${inv.row.name || ""} ➔ <span class="text-rose-700 font-bold">${inv.reason}</span></div>
+                        `).join("")}
+                        ${bulkParsedInvalidAccounts.length > 15 ? `<div>... و ${bulkParsedInvalidAccounts.length - 15} سجلات أخرى متجاهلة.</div>` : ""}
+                    `;
+                } else {
+                    issuesContainer.classList.add("hidden");
+                }
+            }
+
+            if (previewTbody) {
+                const sampleRows = bulkParsedValidAccounts.slice(0, 10);
+                previewTbody.innerHTML = sampleRows.map((r, i) => `
+                    <tr class="hover:bg-slate-50">
+                        <td class="p-2 text-slate-400 font-mono">${i + 1}</td>
+                        <td class="p-2 font-mono font-bold text-teal-700">${r.id}</td>
+                        <td class="p-2 font-bold text-navy">${r.name}</td>
+                        <td class="p-2 font-mono text-slate-600">${r.username}</td>
+                        <td class="p-2 font-mono text-slate-500">${r.password}</td>
+                        <td class="p-2 text-slate-600">${r.dept}</td>
+                        <td class="p-2">
+                            <span class="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
+                                ✓ جاهز
+                            </span>
+                        </td>
+                    </tr>
+                `).join("");
+                if (bulkParsedValidAccounts.length > 10) {
+                    previewTbody.innerHTML += `
+                        <tr class="bg-slate-50/60 font-semibold text-slate-500 text-center">
+                            <td colspan="7" class="p-2.5">... بالإضافة إلى ${bulkParsedValidAccounts.length - 10} موظف آخرين في الدفعة سيتم حفظهم جميعاً.</td>
+                        </tr>
+                    `;
+                }
+            }
+
+            if (btnSave) {
+                btnSave.disabled = bulkParsedValidAccounts.length === 0;
+                btnSave.innerHTML = `<i data-lucide="cloud-upload" class="w-4 h-4"></i><span>حفظ كافة الموظفين الصالحين (${bulkParsedValidAccounts.length}) في Supabase الآن</span>`;
+            }
+
+            if (window.lucide) lucide.createIcons();
+        }
+
+        async function executeBulkSaveToSupabase() {
+            if (bulkParsedValidAccounts.length === 0) {
+                alert("لا توجد سجلات صالحة للحفظ.");
+                return;
+            }
+            if (!supabaseClient) {
+                alert("قاعدة بيانات Supabase غير متصلة! يرجى إدخال مفاتيح Supabase من الزر في الأعلى لتفعيل الحفظ السحابي المباشر.");
+                return;
+            }
+
+            const total = bulkParsedValidAccounts.length;
+            if (!confirm(`هل أنت متأكد من حفظ عدد (${total}) موظف دفعة واحدة في جدول ysl_accounts في Supabase؟`)) {
+                return;
+            }
+
+            const progContainer = document.getElementById("bulk-progress-container");
+            const progBar = document.getElementById("bulk-progress-bar");
+            const progPercent = document.getElementById("bulk-progress-percent");
+            const progLabel = document.getElementById("bulk-progress-label");
+            const btnSave = document.getElementById("btn-execute-bulk-save");
+
+            if (progContainer) progContainer.classList.remove("hidden");
+            if (btnSave) {
+                btnSave.disabled = true;
+                btnSave.innerHTML = `<span class="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin inline-block"></span><span>جارٍ الحفظ في Supabase...</span>`;
+            }
+
+            const BATCH_SIZE = 50;
+            let insertedCount = 0;
+
+            for (let i = 0; i < total; i += BATCH_SIZE) {
+                const batch = bulkParsedValidAccounts.slice(i, i + BATCH_SIZE);
+                try {
+                    // 1. Insert accounts batch
+                    const { error: accErr } = await supabaseClient.from("ysl_accounts").insert(batch);
+                    if (accErr) {
+                        console.error("Batch insert error:", accErr);
+                        alert(`حدث خطأ أثناء حفظ الدفعة (${i + 1} - ${i + batch.length}): ` + accErr.message);
+                        break;
+                    }
+
+                    // 2. Insert progress initialization batch
+                    const progressBatch = batch.map(acc => ({
+                        user_id: acc.id,
+                        completed_lessons: [],
+                        ai_writing_score: 0,
+                        speaking_practices: 0,
+                        last_active: "تم الإنشاء حديثاً"
+                    }));
+                    await supabaseClient.from("ysl_progress").insert(progressBatch);
+
+                    insertedCount += batch.length;
+                    const pct = Math.round((insertedCount / total) * 100);
+                    if (progBar) progBar.style.width = `${pct}%`;
+                    if (progPercent) progPercent.innerText = `${pct}%`;
+                    if (progLabel) progLabel.innerText = `تم حفظ ${insertedCount} من ${total} موظف...`;
+                } catch (err) {
+                    console.error("Fatal error during bulk batch insert:", err);
+                    alert("خطأ أثناء الحفظ في Supabase: " + err.message);
+                    break;
+                }
+            }
+
+            if (insertedCount > 0) {
+                closeBulkAddModal();
+                // Reload table directly from Supabase
+                await loadEmployeesFromSupabase();
+                confetti({ particleCount: 80, spread: 80 });
+                alert(`🎉 اكتملت الإضافة الجماعية بنجاح!\n\nتم حفظ (${insertedCount}) موظف في جدول ysl_accounts بـ Supabase مع تفعيل حساباتهم.\nتم استبعاد (${bulkParsedInvalidAccounts.length}) سجل مكرر أو غير مكتمل لحماية بياناتك القديمة.`);
+            }
+        }
+
+        // ==========================================
+        // 23. MANUAL ADD EMPLOYEE WITH CUSTOM ID & SUPABASE UNIQUENESS CHECK
+        // ==========================================
+        window.handleCreateNewUser = async function(e) {
+            e.preventDefault();
+            const empIdInput = document.getElementById("new-user-empid");
+            const empId = empIdInput ? empIdInput.value.trim() : "";
+            const name = (document.getElementById("new-user-fullname")?.value || "").trim();
+            const dept = document.getElementById("new-user-dept")?.value || "العامة";
+            const email = (document.getElementById("new-user-email")?.value || "").trim();
+            const username = (document.getElementById("new-user-username")?.value || "").trim().toLowerCase();
+            const password = (document.getElementById("new-user-password")?.value || "").trim();
+            const role = document.getElementById("new-user-role")?.value || "learner";
+
+            if (!empId) {
+                alert("يرجى كتابة الرقم الوظيفي (Employee ID) للموظف.");
+                if (empIdInput) empIdInput.focus();
+                return;
+            }
+            if (!name || !username || !password) {
+                alert("يرجى إكمال جميع الحقول المطلوبة (الاسم الكامل، اسم المستخدم، وكلمة المرور).");
+                return;
+            }
+
+            // 1. Uniqueness check against current in-memory cache
+            const duplicateIdInCache = LMS_EMPLOYEES_CACHE.find(emp => String(emp.id).trim().toLowerCase() === empId.toLowerCase());
+            if (duplicateIdInCache) {
+                alert(`⚠️ هذا الرقم الوظيفي (${empId}) مسجل لموظف آخر مسبقاً (${duplicateIdInCache.name})!\nولن يتم استبدال الموظف القديم. يرجى إدخال رقم وظيفي مختلف.`);
+                if (empIdInput) empIdInput.focus();
+                return;
+            }
+
+            // 2. Uniqueness check directly against Supabase ysl_accounts table
+            if (supabaseClient) {
+                try {
+                    const { data: existingIdRow } = await supabaseClient
+                        .from("ysl_accounts")
+                        .select("id, name")
+                        .eq("id", empId)
+                        .maybeSingle();
+
+                    if (existingIdRow) {
+                        alert(`⚠️ هذا الرقم الوظيفي (${empId}) مسجل لموظف آخر مسبقاً في Supabase (${existingIdRow.name})!\nولن يتم استبدال الموظف القديم. يرجى إدخال رقم وظيفي مختلف.`);
+                        if (empIdInput) empIdInput.focus();
+                        return;
+                    }
+
+                    const { data: existingUserRow } = await supabaseClient
+                        .from("ysl_accounts")
+                        .select("username")
+                        .eq("username", username)
+                        .maybeSingle();
+
+                    if (existingUserRow) {
+                        alert(`⚠️ اسم المستخدم (${username}) مسجل لموظف آخر مسبقاً. يرجى اختيار اسم مستخدم مختلف.`);
+                        document.getElementById("new-user-username")?.focus();
+                        return;
+                    }
+                } catch (chkErr) {
+                    console.warn("Supabase uniqueness check warning:", chkErr);
+                }
+            }
+
+            // Parse numeric portion if any for the number column
+            const numMatch = empId.match(/\d+/);
+            const parsedNumber = numMatch ? parseInt(numMatch[0], 10) : 0;
+            const initials = name.split(" ").map(w => w.charAt(0)).slice(0, 2).join("");
+
+            const newAccount = {
+                id: empId,
+                number: parsedNumber,
+                username: username,
+                password: password,
+                name: name,
+                email: email,
+                dept: dept,
+                role: role,
+                avatar: initials || "مو",
+                created_at: new Date().toISOString()
+            };
+
+            if (supabaseClient) {
+                const { error: insErr } = await supabaseClient.from("ysl_accounts").insert([newAccount]);
+                if (insErr) {
+                    alert("حدث خطأ أثناء حفظ الموظف في Supabase: " + insErr.message);
+                    return;
+                }
+                // Initialize progress row in ysl_progress
+                await supabaseClient.from("ysl_progress").insert([{
+                    user_id: empId,
+                    completed_lessons: [],
+                    ai_writing_score: 0,
+                    speaking_practices: 0,
+                    last_active: "تم الإنشاء حديثاً"
+                }]);
+
+                // Reload table strictly from Supabase
+                await loadEmployeesFromSupabase();
+            } else {
+                alert("تنبيه: قاعدة بيانات Supabase غير متصلة. يرجى تفعيل مفاتيح Supabase ليتم الحفظ والمزامنة السحابية.");
+                return;
+            }
+
+            // Clear inputs
+            if (empIdInput) empIdInput.value = "";
+            document.getElementById("new-user-fullname").value = "";
+            document.getElementById("new-user-email").value = "";
+            document.getElementById("new-user-username").value = "";
+            document.getElementById("new-user-password").value = "";
+            closeAddUserModal();
+            confetti({ particleCount: 60, spread: 70 });
+            alert(`✓ تم إنشاء وحفظ حساب الموظف بنجاح في Supabase!\n\nالرقم الوظيفي: ${empId}\nاسم الموظف: ${name}\nاسم المستخدم: ${username}\nكلمة المرور: ${password}\nالقسم: ${dept}`);
+        };
+
+        // ==========================================
+        // 24. PURE SUPABASE TABLE LOADER (NO LOCALSTORAGE)
+        // ==========================================
+        async function loadEmployeesFromSupabase() {
+            const tbody = document.getElementById("lms-table-body") || document.getElementById("lms-employees-table-body");
+            if (!supabaseClient) {
+                if (tbody) {
+                    tbody.innerHTML = `
+                        <tr>
+                            <td colspan="8" class="py-14 text-center">
+                                <div class="max-w-md mx-auto space-y-3">
+                                    <div class="w-14 h-14 mx-auto rounded-2xl bg-amber-50 border border-amber-200 flex items-center justify-center text-amber-600 shadow-sm">
+                                        <i data-lucide="database" class="w-7 h-7"></i>
+                                    </div>
+                                    <h4 class="text-sm font-bold text-navy">قاعدة بيانات Supabase غير متصلة</h4>
+                                    <p class="text-xs text-slate-500 leading-relaxed">
+                                        لعرض وإدارة قائمة الموظفين الفعلية المحفوظة في السحابة، يرجى تفعيل مفاتيح الربط بـ Supabase من الزر أعلاه.
+                                    </p>
+                                    <div class="pt-2">
+                                        <button type="button" onclick="openSupabaseConfigModal()" class="px-5 py-2.5 bg-teal-DEFAULT hover:bg-teal-light text-white text-xs font-bold rounded-xl transition inline-flex items-center gap-2 shadow-sm">
+                                            <i data-lucide="settings" class="w-4 h-4"></i>
+                                            <span>إعدادات مفاتيح Supabase</span>
+                                        </button>
+                                    </div>
+                                </div>
+                            </td>
+                        </tr>
+                    `;
+                    if (window.lucide) lucide.createIcons();
+                }
+                updateLmsStats([]);
+                return;
+            }
+
+            if (tbody && LMS_EMPLOYEES_CACHE.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="8" class="py-12 text-center text-slate-500 text-xs">
+                            <span class="w-5 h-5 border-2 border-teal-DEFAULT border-t-transparent rounded-full animate-spin inline-block mb-2"></span>
+                            <p>جاري تحميل قائمة الموظفين الفعلية مباشرة من Supabase...</p>
+                        </td>
+                    </tr>
+                `;
+            }
+
+            try {
+                const { data: accountsData, error: accErr } = await supabaseClient
+                    .from("ysl_accounts")
+                    .select("*")
+                    .order("created_at", { ascending: false });
+
+                if (accErr) {
+                    console.error("Supabase accounts query error:", accErr);
+                    if (tbody) {
+                        tbody.innerHTML = `
+                            <tr>
+                                <td colspan="8" class="py-10 text-center text-rose-600 text-xs">
+                                    <p class="font-bold">فشل جلب البيانات من جدول ysl_accounts في Supabase:</p>
+                                    <p class="font-mono mt-1">${accErr.message}</p>
+                                </td>
+                            </tr>
+                        `;
+                    }
+                    return;
+                }
+
+                const { data: progressData } = await supabaseClient
+                    .from("ysl_progress")
+                    .select("*");
+
+                const progMap = {};
+                if (progressData) {
+                    progressData.forEach(row => {
+                        progMap[row.user_id] = {
+                            completedLessons: Array.isArray(row.completed_lessons) ? row.completed_lessons : [],
+                            aiWritingScore: row.ai_writing_score || 0,
+                            speakingPractices: row.speaking_practices || 0,
+                            lastActive: row.last_active || "مؤخراً"
+                        };
+                    });
+                }
+
+                // Filter out supervisor/admin role from tracking table
+                const learnerAccounts = (accountsData || []).filter(acc => acc.role !== "admin");
+
+                LMS_EMPLOYEES_CACHE = learnerAccounts.map(acc => {
+                    const userProg = progMap[acc.id] || {
+                        completedLessons: [],
+                        aiWritingScore: 0,
+                        speakingPractices: 0,
+                        lastActive: "تم التسجيل حديثاً"
+                    };
+
+                    const compLessons = [...(userProg.completedLessons || [])];
+                    const completedCount = compLessons.length;
+                    const progressPct = Math.round((completedCount / 11) * 100);
+                    const status = completedCount === 11 ? "مكتمل" : (completedCount > 0 ? "قيد التدريب" : "لم يبدأ");
+
+                    return {
+                        id: acc.id,
+                        number: acc.number || (acc.id.match(/\d+/) ? parseInt(acc.id.match(/\d+/)[0], 10) : 0),
+                        username: acc.username,
+                        password: acc.password,
+                        name: acc.name,
+                        email: acc.email || `${acc.username}@company.sa`,
+                        dept: acc.dept || "العامة",
+                        role: acc.role || "learner",
+                        avatar: acc.avatar || (acc.name ? acc.name.split(" ").map(w => w.charAt(0)).slice(0, 2).join("") : "مو"),
+                        completedLessons: compLessons,
+                        completedCount: completedCount,
+                        progressPct: progressPct,
+                        aiWritingScore: userProg.aiWritingScore || 0,
+                        speakingPractices: userProg.speakingPractices || 0,
+                        status: status,
+                        lastActive: userProg.lastActive || "اليوم",
+                        createdAt: acc.created_at || "2026/01/01"
+                    };
+                });
+
+                updateLmsStats(LMS_EMPLOYEES_CACHE);
+                filterLmsEmployees();
+                renderLmsTable();
+            } catch (err) {
+                console.error("Fatal error loading from Supabase:", err);
+            }
+        }
+
+        // Replace window.initLmsAdmin to use purely Supabase
+        window.initLmsAdmin = async function() {
+            renderAdminVideoManager();
+            if (!supabaseClient) {
+                initSupabaseClient();
+            }
+            await loadEmployeesFromSupabase();
+        };
+
+        // Replace window.executeDeleteEmployee to delete purely from Supabase
+        window.executeDeleteEmployee = async function() {
+            if (!employeeIdToDelete) return;
+            const empId = employeeIdToDelete;
+
+            if (supabaseClient) {
+                try {
+                    await supabaseClient.from("ysl_progress").delete().eq("user_id", empId);
+                    await supabaseClient.from("ysl_accounts").delete().eq("id", empId);
+                } catch (e) {
+                    console.error("Supabase employee delete error:", e);
+                }
+            }
+
+            if (currentUser && currentUser.id === empId) {
+                logout();
+            }
+
+            closeDeleteConfirmModal();
+            await loadEmployeesFromSupabase();
+            showLmsToast("تم حذف الموظف بنجاح من قاعدة بيانات Supabase");
+        };
+
+        // Replace window.executeLogin to check Supabase directly
+        const originalExecuteLogin = window.executeLogin;
+        window.executeLogin = async function(username, password) {
+            const uNorm = (username || "").trim().toLowerCase();
+            const pNorm = (password || "").trim();
+
+            if (supabaseClient && uNorm !== "admin") {
+                try {
+                    const { data: userRow } = await supabaseClient
+                        .from("ysl_accounts")
+                        .select("*")
+                        .ilike("username", uNorm)
+                        .eq("password", pNorm)
+                        .maybeSingle();
+
+                    if (userRow) {
+                        executeDirectSessionLogin(userRow);
+                        return;
+                    }
+                } catch (e) {
+                    console.warn("Supabase login check error:", e);
+                }
+            }
+
+            // Fallback to original login
+            if (typeof originalExecuteLogin === "function") {
+                originalExecuteLogin(username, password);
+            }
+        };
+
+
+
+        // ==========================================
+        // 25. SUPABASE STORAGE (VIDEOS BUCKET) INTEGRATION
+        // ==========================================
+
+        // Universal Download URL resolver: works with both Supabase Storage and Cloudinary
+        function resolveVideoDownloadUrl(url, filename = "") {
+            if (!url) return "";
+            // Supabase Storage Public URLs
+            if (url.includes("/storage/v1/object/public/")) {
+                const safeName = filename ? encodeURIComponent(filename.replace(/\s+/g, "_")) : "lesson_video.mp4";
+                return url.includes("?") ? `${url}&download=${safeName}` : `${url}?download=${safeName}`;
+            }
+            // Cloudinary URLs
+            if (url.includes("/video/upload/")) {
+                const safeName = filename ? encodeURIComponent(filename.replace(/\s+/g, "_")) : "";
+                const flag = safeName ? `fl_attachment:${safeName}/` : "fl_attachment/";
+                return url.replace("/video/upload/", `/video/upload/${flag}`);
+            }
+            return url;
+        }
+
+        // Override getCloudinaryDownloadUrl to support Supabase Storage seamlessly
+        window.getCloudinaryDownloadUrl = resolveVideoDownloadUrl;
+
+        // Upload Video directly from Device to Supabase Storage 'videos' bucket
+        window.startUploadVideoToSupabaseStorage = async function(event) {
+            event.preventDefault();
+
+            if (!selectedVideoFile) {
+                alert("يرجى اختيار ملف فيديو أولاً من جهازك.");
+                return;
+            }
+
+            if (!supabaseClient) {
+                alert("قاعدة بيانات Supabase غير متصلة! يرجى إدخال مفاتيح Supabase من الزر في الأعلى لتفعيل التخزين السحابي.");
+                return;
+            }
+
+            const lessonSelect = document.getElementById("video-target-lesson");
+            const lessonNum = parseInt(lessonSelect ? lessonSelect.value : "1", 10);
+            const titleInput = document.getElementById("video-custom-title");
+            const existingVideos = getLessonVideos(lessonNum);
+            const nextIdx = existingVideos.length + 1;
+            const videoTitle = (titleInput && titleInput.value.trim()) || `المحاضرة ${nextIdx}: شرح الدرس ${lessonNum}`;
+
+            const progContainer = document.getElementById("upload-progress-container");
+            const bar = document.getElementById("upload-progress-bar");
+            const percentText = document.getElementById("upload-percent-text");
+            const bytesText = document.getElementById("upload-bytes-text");
+            const submitBtn = document.getElementById("btn-submit-upload");
+
+            if (progContainer) progContainer.classList.remove("hidden");
+            if (submitBtn) {
+                submitBtn.disabled = true;
+                submitBtn.innerHTML = `<span class="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin inline-block"></span><span>جارٍ الرفع إلى Supabase Storage...</span>`;
+            }
+
+            const sanitizedName = selectedVideoFile.name.replace(/[^a-zA-Z0-9._-]/g, "_");
+            const filePath = `lesson_${lessonNum}/${Date.now()}_${sanitizedName}`;
+
+            const totalBytesMb = (selectedVideoFile.size / (1024 * 1024)).toFixed(1);
+
+            if (bar) bar.style.width = "30%";
+            if (percentText) percentText.innerText = "30%";
+            if (bytesText) bytesText.innerText = `0.0 MB / ${totalBytesMb} MB`;
+
+            try {
+                // 1. Upload to Supabase Storage bucket 'videos'
+                const { data: uploadData, error: uploadErr } = await supabaseClient
+                    .storage
+                    .from("videos")
+                    .upload(filePath, selectedVideoFile, {
+                        cacheControl: "3600",
+                        upsert: false
+                    });
+
+                if (uploadErr) {
+                    console.error("Supabase Storage upload error:", uploadErr);
+                    let errMsg = "حدث خطأ أثناء الرفع إلى سلة videos في Supabase Storage:\n" + uploadErr.message;
+                    if (uploadErr.message.includes("Bucket not found") || uploadErr.statusCode === "404") {
+                        errMsg += "\n\n💡 السبب: لم يتم العثور على سلة تخزين باسم 'videos'.\nيرجى الدخول إلى Supabase Dashboard ➔ Storage ➔ Create New Bucket باسم 'videos' وتفعيل خيار (Public bucket: ON).";
+                    } else if (uploadErr.message.includes("row-level security") || uploadErr.statusCode === "403") {
+                        errMsg += "\n\n💡 السبب: قيود الأمان (RLS).\nيرجى فتح نافذة (كود SQL) في لوحة التحكم وتشغيل سياسات سلة videos في Supabase SQL Editor.";
+                    }
+                    alert(errMsg);
+                    if (submitBtn) {
+                        submitBtn.disabled = false;
+                        submitBtn.innerHTML = `<i data-lucide="upload-cloud" class="w-4 h-4"></i><span>إعادة المحاولة</span>`;
+                    }
+                    return;
+                }
+
+                if (bar) bar.style.width = "75%";
+                if (percentText) percentText.innerText = "75%";
+                if (bytesText) bytesText.innerText = `${totalBytesMb} MB / ${totalBytesMb} MB`;
+
+                // 2. Retrieve Public URL from Supabase Storage
+                const { data: publicUrlData } = supabaseClient
+                    .storage
+                    .from("videos")
+                    .getPublicUrl(filePath);
+
+                const publicUrl = publicUrlData ? publicUrlData.publicUrl : "";
+                if (!publicUrl) {
+                    throw new Error("تعذر استخراج الرابط العام لملف الفيديو المرفوع.");
+                }
+
+                if (bar) bar.style.width = "90%";
+                if (percentText) percentText.innerText = "90%";
+
+                // 3. Save Video Record in ysl_lesson_videos table
+                const videoId = "vid_" + Date.now() + "_" + Math.random().toString(36).substring(2, 7);
+                const fileExt = selectedVideoFile.name.split(".").pop() || "mp4";
+
+                const newVideoItem = {
+                    id: videoId,
+                    lesson_number: lessonNum,
+                    title: videoTitle,
+                    file_name: selectedVideoFile.name,
+                    file_size: `${totalBytesMb} MB`,
+                    file_type: selectedVideoFile.type || "video/mp4",
+                    download_url: publicUrl,
+                    public_id: filePath,
+                    format: fileExt,
+                    duration: null,
+                    uploaded_at: new Date().toLocaleString("ar-SA", { dateStyle: "short", timeStyle: "short" }),
+                    uploaded_by: currentUser ? currentUser.name : "المشرف العام"
+                };
+
+                const { error: dbErr } = await supabaseClient
+                    .from("ysl_lesson_videos")
+                    .insert([newVideoItem]);
+
+                if (dbErr) {
+                    console.error("Database insert error into ysl_lesson_videos:", dbErr);
+                    alert("تم رفع الفيديو إلى التخزين ولكن حدث خطأ أثناء حفظه في الجدول: " + dbErr.message);
+                    return;
+                }
+
+                if (bar) bar.style.width = "100%";
+                if (percentText) percentText.innerText = "100%";
+
+                // 4. Update in-memory state and UI
+                const db = getLessonVideosDb();
+                const lessonVideos = getLessonVideos(lessonNum);
+                lessonVideos.push({
+                    id: newVideoItem.id,
+                    title: newVideoItem.title,
+                    fileName: newVideoItem.file_name,
+                    fileSize: newVideoItem.file_size,
+                    fileType: newVideoItem.file_type,
+                    downloadUrl: newVideoItem.download_url,
+                    publicId: newVideoItem.public_id,
+                    storagePath: filePath,
+                    format: newVideoItem.format,
+                    uploadedAt: newVideoItem.uploaded_at,
+                    uploadedBy: newVideoItem.uploaded_by
+                });
+                db[lessonNum] = lessonVideos;
+                saveLessonVideosDb(db);
+
+                // Set newly uploaded video as active in lesson
+                window.activeLessonVideoIndices[lessonNum] = lessonVideos.length - 1;
+
+                closeUploadVideoModal();
+                renderAdminVideoManager();
+
+                if (currentLessonId === lessonNum && typeof selectLesson === "function") {
+                    selectLesson(lessonNum);
+                }
+
+                confetti({ particleCount: 70, spread: 70 });
+                alert(`✅ تم رفع الفيديو بنجاح إلى سلة videos في Supabase Storage!\n\nتم حفظ الرابط العام في جدول ysl_lesson_videos:\n- العنوان: "${videoTitle}"\n- الدرس: ${lessonNum}\n- الحجم: ${totalBytesMb} MB\n\nأصبح الفيديو متاحاً الآن لكافة الطلاب مع مشغل تفاعلي وزر تنزيل مباشر.`);
+            } catch (err) {
+                console.error("Upload to Supabase Storage exception:", err);
+                alert("حدث خطأ أثناء رفع الفيديو: " + (err.message || err));
+                if (submitBtn) {
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = `<i data-lucide="upload-cloud" class="w-4 h-4"></i><span>إعادة المحاولة</span>`;
+                }
+            }
+        };
+
+        // Backward compatibility
+        window.startUploadVideoToCloudinary = window.startUploadVideoToSupabaseStorage;
+
+        // Enhanced Delete: Deletes from both Supabase table and Supabase Storage bucket 'videos'
+        window.deleteLessonVideoItem = async function(lessonNum, videoId) {
+            if (!currentUser || currentUser.role !== "admin") {
+                alert("عذراً، حذف الفيديوهات مقتصر على المشرفين فقط.");
+                return;
+            }
+
+            const list = getLessonVideos(lessonNum);
+            const video = list.find(v => v.id === videoId);
+            if (!video) return;
+
+            if (confirm(`هل أنت متأكد من رغبتك في حذف هذا الفيديو من الدرس ${lessonNum} وسلة Supabase Storage؟\n\nالعنوان: "${video.title}"`)) {
+                if (supabaseClient) {
+                    try {
+                        // 1. Delete file from Supabase Storage 'videos' bucket if path available
+                        const storagePath = video.publicId || video.public_id || video.storagePath;
+                        if (storagePath && !storagePath.startsWith("http")) {
+                            await supabaseClient.storage.from("videos").remove([storagePath]);
+                        }
+                        // 2. Delete row from ysl_lesson_videos table
+                        await supabaseClient.from("ysl_lesson_videos").delete().eq("id", videoId);
+                    } catch (e) {
+                        console.warn("Notice during Supabase video deletion:", e);
+                    }
+                }
+
+                // Update local storage and UI
+                const db = getLessonVideosDb();
+                const filtered = list.filter(v => v.id !== videoId);
+                db[lessonNum] = filtered;
+                saveLessonVideosDb(db);
+
+                if (window.activeLessonVideoIndices[lessonNum] >= filtered.length) {
+                    window.activeLessonVideoIndices[lessonNum] = Math.max(0, filtered.length - 1);
+                }
+
+                renderAdminVideoManager();
+                if (currentLessonId === lessonNum && typeof selectLesson === "function") {
+                    selectLesson(lessonNum);
+                }
+
+                alert(`تم حذف الفيديو بنجاح من جدول ysl_lesson_videos وسلة videos.`);
+            }
+        };
+
+</script>
 </body>
 </html>
 
