@@ -271,7 +271,7 @@
                             <span class="hidden sm:inline">خروج</span>
                         </button>
 
-                        <button onclick="openApiModal()" title="حالة محرك الذكاء الاصطناعي" class="p-2 text-slate-300 hover:text-white hover:bg-white/10 rounded-xl transition flex items-center gap-1.5 text-xs bg-slate-800/80 border border-slate-700">
+                        <button id="header-ai-status-btn" onclick="openApiModal()" title="حالة محرك الذكاء الاصطناعي" class="admin-only hidden p-2 text-slate-300 hover:text-white hover:bg-white/10 rounded-xl transition flex items-center gap-1.5 text-xs bg-slate-800/80 border border-slate-700">
                             <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
                             <i data-lucide="sparkles" class="w-4 h-4 text-gold"></i>
                             <span class="hidden xl:inline">Gemini AI</span>
@@ -539,7 +539,7 @@
                             يقوم النظام بإرسال إجابتك ومتطلبات الدرس الأصلية مباشرة إلى نموذج Gemini AI السحابي عبر الإنترنت، لمقارنتها بدقة وبيان هل هي صحيحة، أو نصف مكتملة، أو منسوخة، أو غير مرتبطة بالسؤال.
                         </p>
                     </div>
-                    <button onclick="openApiModal()" class="self-start sm:self-auto px-4 py-2 rounded-xl bg-white/10 hover:bg-white/20 text-xs font-bold text-teal-light border border-teal-light/30 transition flex items-center gap-2">
+                    <button id="writing-ai-key-btn" onclick="openApiModal()" class="admin-only hidden self-start sm:self-auto px-4 py-2 rounded-xl bg-white/10 hover:bg-white/20 text-xs font-bold text-teal-light border border-teal-light/30 transition flex items-center gap-2">
                         <i data-lucide="key" class="w-4 h-4"></i> مفتاح Gemini API
                     </button>
                 </div>
@@ -622,7 +622,7 @@
                     <button onclick="submitWritingEvaluation()" class="px-4 py-2 rounded-xl bg-navy text-white text-xs font-bold flex items-center gap-1.5 hover:bg-navy-light transition shadow-sm">
                         <i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i> إعادة المحاولة أونلاين
                     </button>
-                    <button onclick="openApiModal()" class="px-4 py-2 rounded-xl bg-white border border-rose-300 text-rose-800 text-xs font-bold flex items-center gap-1.5 hover:bg-rose-100 transition shadow-sm">
+                    <button id="writing-error-api-btn" onclick="openApiModal()" class="admin-only hidden px-4 py-2 rounded-xl bg-white border border-rose-300 text-rose-800 text-xs font-bold flex items-center gap-1.5 hover:bg-rose-100 transition shadow-sm">
                         <i data-lucide="key" class="w-3.5 h-3.5"></i> ضبط مفتاح الـ API
                     </button>
                     <button onclick="evaluateLocallyFallback()" class="px-4 py-2 rounded-xl bg-teal-DEFAULT text-white text-xs font-bold flex items-center gap-1.5 hover:bg-teal-dark transition shadow-sm">
@@ -3057,20 +3057,25 @@ Return ONLY a valid JSON object matching this exact schema:
 
             } catch (err) {
                 console.error("Evaluation error:", err);
+                const isAdmin = currentUser && currentUser.role === 'admin';
                 const is401 = err.message && (err.message.includes('401') || err.message.includes('403'));
-                if (is401) {
+                if (isAdmin && is401) {
                     document.getElementById('writing-error-title').innerText = "خطأ 401: المفتاح غير مصرح به على متصفح الهاتف";
                     document.getElementById('writing-error-msg').innerHTML = `
                         خوادم Google ترفض المفتاح السحابي الداخلي (401) عند استدعائه مباشرة من متصفح الهاتف.<br><br>
-                        <strong>الحلول السريعة المتاحة:</strong><br>
+                        <strong>الحلول السريعة المتاحة للمشرف:</strong><br>
                         • اضغط على <strong>'تقييم ذكي فوري (المحرك الداخلي)'</strong> بالأسفل للحصول على التقييم الأكاديمي والدرجات فوراً بدون مفتاح.<br>
                         • أو اضغط على <strong>'ضبط مفتاح الـ API'</strong> بالأعلى وأدخل مفتاحك المجاني من Google (يبدأ بـ AIzaSy...).
                     `;
-                } else {
+                } else if (isAdmin) {
                     document.getElementById('writing-error-title').innerText = "تعذر إكمال التقييم السحابي (Gemini AI)";
-                    document.getElementById('writing-error-msg').innerHTML = `حدث خطأ في الاتصال (${err.message}). اضغط على <strong>'تقييم ذكي فوري (المحرك الداخلي)'</strong> للحصول على تقييمك فوراً.`;
+                    document.getElementById('writing-error-msg').innerHTML = `حدث خطأ في الاتصال (${err.message}). يرجى فحص مفتاح الـ API أو الضغط على <strong>'تقييم ذكي فوري'</strong> فوراً.`;
+                } else {
+                    document.getElementById('writing-error-title').innerText = "تعذر إكمال التقييم السحابي حالياً";
+                    document.getElementById('writing-error-msg').innerHTML = `تعذر استلام نتيجة التقييم السحابي حالياً. يمكنك الضغط على <strong>'إعادة المحاولة أونلاين'</strong> أو استخدام <strong>'تقييم ذكي فوري (المحرك اللغوي الداخلي)'</strong> للحصول على تقييمك والدرجات فوراً.`;
                 }
                 document.getElementById('writing-error-card').classList.remove('hidden');
+                applyRolePermissions();
             } finally {
                 isEvaluatingWriting = false;
                 document.getElementById('writing-loading-card').classList.add('hidden');
@@ -3799,6 +3804,10 @@ Return ONLY a valid JSON object matching this exact schema:
         // 11. AI ENGINE STATUS & TEST LOGIC
         // ==========================================
         function openApiModal() {
+            // Strictly restricted to Admin users only
+            if (!currentUser || currentUser.role !== 'admin') {
+                return;
+            }
             const statusEl = document.getElementById('api-test-status');
             if (statusEl) {
                 statusEl.classList.add('hidden');
@@ -5316,6 +5325,8 @@ Return ONLY a valid JSON object matching this exact schema:
             if ('speechSynthesis' in window) {
                 window.speechSynthesis.cancel();
             }
+            currentUser = null;
+            applyRolePermissions();
             localStorage.removeItem('YSL_ACTIVE_SESSION');
 
             const authScreen = document.getElementById('auth-screen');
@@ -5347,6 +5358,23 @@ Return ONLY a valid JSON object matching this exact schema:
                     el.classList.add('hidden');
                 }
             });
+
+            // Explicit controls for AI buttons & status
+            const headerAiBtn = document.getElementById('header-ai-status-btn');
+            if (headerAiBtn) {
+                if (isAdmin) headerAiBtn.classList.remove('hidden');
+                else headerAiBtn.classList.add('hidden');
+            }
+            const writingAiBtn = document.getElementById('writing-ai-key-btn');
+            if (writingAiBtn) {
+                if (isAdmin) writingAiBtn.classList.remove('hidden');
+                else writingAiBtn.classList.add('hidden');
+            }
+            const writingErrAiBtn = document.getElementById('writing-error-api-btn');
+            if (writingErrAiBtn) {
+                if (isAdmin) writingErrAiBtn.classList.remove('hidden');
+                else writingErrAiBtn.classList.add('hidden');
+            }
 
             const roleBadge = document.getElementById('user-role-badge');
             if (roleBadge) {
