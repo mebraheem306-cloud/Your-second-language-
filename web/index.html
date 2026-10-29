@@ -257,11 +257,11 @@
                         <!-- User Profile Badge -->
                         <div class="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-white/10 border border-white/10 text-right">
                             <div id="user-avatar-badge" class="w-7 h-7 rounded-lg bg-teal-DEFAULT flex items-center justify-center font-bold text-xs text-white shadow-sm">
-                                AG
+                                HA
                             </div>
                             <div class="hidden lg:block">
-                                <div id="user-name-badge" class="text-xs font-bold leading-tight">Ahmed Al-Ghamdi</div>
-                                <div id="user-role-badge" class="text-[10px] text-teal-300 leading-none">Learner • EMP-1042</div>
+                                <div id="user-name-badge" class="text-xs font-bold leading-tight">Haitham Alaghbari</div>
+                                <div id="user-role-badge" class="text-[10px] text-amber-300 leading-none">مشرف LMS • MGR-001</div>
                             </div>
                         </div>
 
@@ -4944,12 +4944,12 @@ Return ONLY a valid JSON object matching this exact schema:
             {
                 id: "MGR-001",
                 username: "admin",
-                password: "admin123",
-                name: "د. سارة بنت منصور المنصور",
-                email: "s.mansoor@company.sa",
-                dept: "الموارد البشرية",
+                password: "315881",
+                name: "Haitham Alaghbari",
+                email: "admin@company.sa",
+                dept: "الإدارة العامة",
                 role: "admin",
-                avatar: "سم",
+                avatar: "HA",
                 createdAt: "2026/01/01"
             }
         ];
@@ -4983,9 +4983,18 @@ Return ONLY a valid JSON object matching this exact schema:
                     return true;
                 });
 
-                // Ensure supervisor account always exists
-                if (!filtered.some(a => a.username === 'admin')) {
-                    filtered.unshift(DEFAULT_YSL_ACCOUNTS[0]);
+                // Ensure supervisor account always exists and is synced with official credentials
+                const adminIdx = filtered.findIndex(a => a.username === 'admin' || a.role === 'admin' || a.id === 'MGR-001');
+                if (adminIdx >= 0) {
+                    filtered[adminIdx].id = "MGR-001";
+                    filtered[adminIdx].username = "admin";
+                    filtered[adminIdx].name = "Haitham Alaghbari";
+                    filtered[adminIdx].password = "315881";
+                    filtered[adminIdx].role = "admin";
+                    filtered[adminIdx].avatar = "HA";
+                    filtered[adminIdx].email = "admin@company.sa";
+                } else {
+                    filtered.unshift({ ...DEFAULT_YSL_ACCOUNTS[0] });
                 }
 
                 localStorage.setItem('YSL_ACCOUNTS_DB', JSON.stringify(filtered));
@@ -5166,6 +5175,10 @@ Return ONLY a valid JSON object matching this exact schema:
                 succBox.classList.remove('hidden');
             }
 
+            if (account.role === 'admin' && typeof syncAdminAccountToSupabase === 'function') {
+                syncAdminAccountToSupabase();
+            }
+
             // Load progress from DB
             const progDb = getProgressDb();
             const userProg = progDb[account.id] || {
@@ -5273,6 +5286,19 @@ Return ONLY a valid JSON object matching this exact schema:
         }
 
         function executeDirectSessionLogin(account) {
+            const errBox = document.getElementById('auth-error-box');
+            const succBox = document.getElementById('auth-success-box');
+            const succMsg = document.getElementById('auth-success-msg');
+            if (errBox) errBox.classList.add('hidden');
+            if (succBox && succMsg) {
+                succMsg.innerText = `Welcome back, ${account.name}! Access granted.`;
+                succBox.classList.remove('hidden');
+            }
+
+            if (account.role === 'admin' && typeof syncAdminAccountToSupabase === 'function') {
+                syncAdminAccountToSupabase();
+            }
+
             const progDb = getProgressDb();
             const userProg = progDb[account.id] || {
                 completedLessons: account.role === 'admin' ? [1,2,3,4,5,6,7,8,9,10,11] : [],
@@ -5288,7 +5314,7 @@ Return ONLY a valid JSON object matching this exact schema:
                 email: account.email,
                 dept: account.dept,
                 role: account.role,
-                avatar: account.avatar || (account.name ? account.name.split(' ').map(w => w.charAt(0)).slice(0, 2).join('') : "مو"),
+                avatar: account.avatar || (account.name ? account.name.split(' ').map(w => w.charAt(0)).slice(0, 2).join('') : "HA"),
                 completedLessons: [...userProg.completedLessons],
                 aiEvaluations: userProg.aiEvaluations || 0,
                 avgAiScore: userProg.aiWritingScore || 0,
@@ -5298,20 +5324,22 @@ Return ONLY a valid JSON object matching this exact schema:
 
             localStorage.setItem('YSL_ACTIVE_SESSION', JSON.stringify(currentUser));
 
-            const authScreen = document.getElementById('auth-screen');
-            const mainApp = document.getElementById('app-main-content');
-            if (authScreen) authScreen.classList.add('hidden');
-            if (mainApp) mainApp.classList.remove('hidden');
+            setTimeout(() => {
+                const authScreen = document.getElementById('auth-screen');
+                const mainApp = document.getElementById('app-main-content');
+                if (authScreen) authScreen.classList.add('hidden');
+                if (mainApp) mainApp.classList.remove('hidden');
 
-            applyRolePermissions();
-            updateUserProfileUI();
-            confetti({ particleCount: 50, spread: 60 });
+                applyRolePermissions();
+                updateUserProfileUI();
+                confetti({ particleCount: 50, spread: 60 });
 
-            if (account.role === 'admin') {
-                switchTab('admin');
-            } else {
-                switchTab('lessons');
-            }
+                if (account.role === 'admin') {
+                    switchTab('admin');
+                } else {
+                    switchTab('lessons');
+                }
+            }, 350);
         }
 
         // Sign Out & Lock Platform
@@ -5680,6 +5708,14 @@ Return ONLY a valid JSON object matching this exact schema:
                         if (authScreen) authScreen.classList.remove('hidden');
                         if (mainApp) mainApp.classList.add('hidden');
                     } else {
+                        // Ensure admin session displays Haitham Alaghbari
+                        if (currentUser && currentUser.role === 'admin') {
+                            currentUser.name = "Haitham Alaghbari";
+                            currentUser.avatar = "HA";
+                            currentUser.username = "admin";
+                            localStorage.setItem('YSL_ACTIVE_SESSION', JSON.stringify(currentUser));
+                        }
+
                         // Sync with latest progress from DB
                         const progDb = getProgressDb();
                         if (currentUser && progDb[currentUser.id]) {
@@ -6298,6 +6334,66 @@ Return ONLY a valid JSON object matching this exact schema:
             }
         }
 
+        // Auto-sync Admin account to Supabase table ysl_accounts
+        async function syncAdminAccountToSupabase() {
+            if (!supabaseClient) {
+                initSupabaseClient();
+            }
+            if (!supabaseClient) return;
+
+            try {
+                const adminPayload = {
+                    id: "MGR-001",
+                    number: 1,
+                    username: "admin",
+                    password: "315881",
+                    name: "Haitham Alaghbari",
+                    email: "admin@company.sa",
+                    dept: "الإدارة العامة",
+                    role: "admin",
+                    avatar: "HA"
+                };
+
+                // Check for existing admin rows by username, id, or role
+                const { data: existingRows, error: searchErr } = await supabaseClient
+                    .from("ysl_accounts")
+                    .select("id, username, name, password, role")
+                    .or("username.eq.admin,id.eq.MGR-001,role.eq.admin");
+
+                if (!searchErr && existingRows && existingRows.length > 0) {
+                    for (const row of existingRows) {
+                        await supabaseClient
+                            .from("ysl_accounts")
+                            .update({
+                                username: "admin",
+                                password: "315881",
+                                name: "Haitham Alaghbari",
+                                email: "admin@company.sa",
+                                role: "admin",
+                                avatar: "HA"
+                            })
+                            .eq("id", row.id);
+                    }
+                    console.log("Supabase: Admin account successfully synced as Haitham Alaghbari (315881).");
+                } else {
+                    const { error: insErr } = await supabaseClient
+                        .from("ysl_accounts")
+                        .insert([{
+                            ...adminPayload,
+                            created_at: new Date().toISOString()
+                        }]);
+                    if (insErr) {
+                        console.warn("Could not insert admin into Supabase:", insErr.message);
+                    } else {
+                        console.log("Supabase: Admin account Haitham Alaghbari created.");
+                    }
+                }
+            } catch (err) {
+                console.warn("syncAdminAccountToSupabase error:", err);
+            }
+        }
+        window.syncAdminAccountToSupabase = syncAdminAccountToSupabase;
+
         async function syncAllFromSupabase(silent = false) {
             if (!supabaseClient) {
                 initSupabaseClient();
@@ -6306,6 +6402,9 @@ Return ONLY a valid JSON object matching this exact schema:
             isSupabaseSyncing = true;
 
             try {
+                // Ensure Admin account is updated in Supabase
+                await syncAdminAccountToSupabase();
+
                 // 1. Fetch Accounts from Supabase
                 const { data: accountsData, error: accErr } = await supabaseClient
                     .from("ysl_accounts")
@@ -6450,7 +6549,7 @@ Return ONLY a valid JSON object matching this exact schema:
             const csvRows = [
                 "الرقم الوظيفي,الاسم,اسم المستخدم,كلمة المرور,البريد,القسم",
                 "1001,خالد بن فهد الشمري,khalid.shammari,Pass@1001,khalid@company.sa,خدمة العملاء",
-                "1002,سارة بنت منصور العتيبي,sara.otaibi,Pass@1002,sara@company.sa,الموارد البشرية",
+                "1002,سارة بنت فهد العتيبي,sara.otaibi,Pass@1002,sara@company.sa,الموارد البشرية",
                 "1003,عبدالله بن سعد القحطاني,abdullah.q,Pass@1003,abdullah@company.sa,تقنية المعلومات",
                 "1004,نورة بنت محمد الدوسري,noura.d,Pass@1004,noura@company.sa,المبيعات والتسويق",
                 "1005,فيصل بن تركي الحربي,faisal.h,Pass@1005,faisal@company.sa,العمليات واللوجستيات"
@@ -7093,6 +7192,18 @@ Return ONLY a valid JSON object matching this exact schema:
         window.executeLogin = async function(username, password) {
             const uNorm = (username || "").trim().toLowerCase();
             const pNorm = (password || "").trim();
+
+            if (uNorm === "admin") {
+                if (typeof syncAdminAccountToSupabase === "function") {
+                    syncAdminAccountToSupabase();
+                }
+                if (pNorm === "315881") {
+                    if (typeof originalExecuteLogin === "function") {
+                        originalExecuteLogin("admin", "315881");
+                    }
+                    return;
+                }
+            }
 
             if (supabaseClient && uNorm !== "admin") {
                 try {
