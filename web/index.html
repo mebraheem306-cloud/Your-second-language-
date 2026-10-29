@@ -286,22 +286,24 @@
 
             <!-- Mobile Menu Dropdown -->
             <div id="mobile-menu" class="hidden md:hidden bg-navy-light border-t border-slate-700 px-4 pt-2 pb-4 space-y-1">
-            <button onclick="openLoginModal(); toggleMobileMenu();" class="w-full text-right px-3 py-2.5 rounded-xl bg-white/10 text-white flex items-center justify-between mb-2 border border-white/10">
+            <button onclick="logout(); toggleMobileMenu();" title="تسجيل الخروج" class="w-full text-right px-3 py-2.5 rounded-xl bg-white/10 hover:bg-white/20 text-white flex items-center justify-between mb-2 border border-white/10 transition">
                 <div class="flex items-center gap-2">
-                    <div id="mobile-avatar-badge" class="w-7 h-7 rounded-lg bg-teal-DEFAULT flex items-center justify-center font-bold text-xs">أغ</div>
+                    <div id="mobile-avatar-badge" class="w-7 h-7 rounded-lg bg-teal-DEFAULT flex items-center justify-center font-bold text-xs text-white">مو</div>
                     <div>
-                        <div id="mobile-name-badge" class="text-xs font-bold">أحمد الغامدي</div>
-                        <div id="mobile-role-badge" class="text-[10px] text-teal-300">موظف • خدمة العملاء</div>
+                        <div id="mobile-name-badge" class="text-xs font-bold">المستخدم</div>
+                        <div id="mobile-role-badge" class="text-[10px] text-teal-300">متعلم</div>
                     </div>
                 </div>
-                <span class="text-xs bg-teal-DEFAULT px-2 py-0.5 rounded-lg text-white font-bold">تبديل الهوية</span>
+                <span class="text-xs bg-rose-500/80 hover:bg-rose-600 px-2.5 py-1 rounded-lg text-white font-bold flex items-center gap-1 transition">
+                    <i data-lucide="log-out" class="w-3.5 h-3.5"></i> خروج
+                </span>
             </button>
             <button onclick="switchTab('dashboard'); toggleMobileMenu();" class="w-full text-right px-3 py-2 rounded-lg text-white hover:bg-white/10 flex items-center gap-2">
                 <i data-lucide="layout-dashboard" class="w-4 h-4"></i> الرئيسية
             </button>
-            <button onclick="switchTab('admin'); toggleMobileMenu();" class="w-full text-right px-3 py-2 rounded-lg text-emerald-300 font-bold hover:bg-white/10 flex items-center justify-between bg-emerald-950/30">
+            <button onclick="switchTab('admin'); toggleMobileMenu();" class="admin-only hidden w-full text-right px-3 py-2 rounded-lg text-emerald-300 font-bold hover:bg-white/10 flex items-center justify-between bg-emerald-950/30 border border-emerald-500/30">
                 <span class="flex items-center gap-2"><i data-lucide="shield-check" class="w-4 h-4 text-emerald-400"></i> لوحة المدير LMS</span>
-                <span class="text-[10px] bg-emerald-500 text-white px-2 py-0.5 rounded-full">1,000 موظف</span>
+                <span class="text-[10px] bg-emerald-500 text-white px-2 py-0.5 rounded-full">إدارة</span>
             </button>
             <button onclick="switchTab('lessons'); toggleMobileMenu();" class="w-full text-right px-3 py-2 rounded-lg text-slate-200 hover:bg-white/10 flex items-center gap-2">
                 <i data-lucide="book-open" class="w-4 h-4"></i> الدروس الـ 11
@@ -323,6 +325,11 @@
             </button>
             <button onclick="switchTab('quiz'); toggleMobileMenu();" class="w-full text-right px-3 py-2 rounded-lg text-slate-200 hover:bg-white/10 flex items-center gap-2">
                 <i data-lucide="check-circle" class="w-4 h-4"></i> الاختبارات والتقييم
+            </button>
+
+            <!-- Dedicated Mobile Logout Button -->
+            <button onclick="logout(); toggleMobileMenu();" class="w-full text-right px-3 py-2.5 rounded-lg text-rose-300 hover:text-white hover:bg-rose-500/20 flex items-center gap-2 border-t border-slate-700/60 pt-2.5 mt-2 font-bold text-xs transition">
+                <i data-lucide="log-out" class="w-4 h-4"></i> تسجيل الخروج (Sign Out)
             </button>
         </div>
     </header>
@@ -2646,8 +2653,8 @@ USING (bucket_id = 'videos');</pre>
                             <div>
                                 <div class="text-xs font-bold text-navy flex items-center gap-2">
                                     <span>سجل تدريب الموظف:</span>
-                                    <span class="text-teal-DEFAULT font-extrabold">${currentUser.name}</span>
-                                    <span class="px-2 py-0.5 rounded bg-white text-slate-600 text-[10px] font-mono border border-slate-200">${currentUser.id}</span>
+                                    <span class="text-teal-DEFAULT font-extrabold">${currentUser ? currentUser.name : 'المتعلم'}</span>
+                                    <span class="px-2 py-0.5 rounded bg-white text-slate-600 text-[10px] font-mono border border-slate-200">${currentUser ? currentUser.id : ''}</span>
                                 </div>
                                 <p class="text-[11px] text-slate-500 mt-0.5">
                                     ${isCompleted ? 'تم تسجيل حضور واجتياز هذا الدرس بنجاح ومزامنته مع لوحة المشرف LMS.' : 'قم بمشاهدة الفيديو التعليمي، والاستماع للحوارات، ثم اضغط على زر الإتمام لحفظ نسبة إنجازك.'}
@@ -2656,7 +2663,7 @@ USING (bucket_id = 'videos');</pre>
                         </div>
                         <div class="text-left flex-shrink-0">
                             <span class="text-[11px] text-slate-400 block">إجمالي إنجاز الموظف:</span>
-                            <span class="text-sm font-black text-navy">${currentUser.completedLessons.length} / 11 درساً (${Math.round((currentUser.completedLessons.length / 11) * 100)}%)</span>
+                            <span class="text-sm font-black text-navy">${(currentUser && currentUser.completedLessons) ? currentUser.completedLessons.length : 0} / 11 درساً (${Math.round((((currentUser && currentUser.completedLessons) ? currentUser.completedLessons.length : 0) / 11) * 100)}%)</span>
                         </div>
                     </div>
 
@@ -4270,20 +4277,7 @@ Return ONLY a valid JSON object matching this exact schema:
         // ==========================================
         // 15. LMS EMPLOYEE MANAGEMENT & TRACKING ENGINE
         // ==========================================
-        let currentUser = {
-            id: "MGR-001",
-            username: "admin",
-            name: "د. سارة بنت منصور المنصور",
-            email: "s.mansoor@company.sa",
-            dept: "الموارد البشرية",
-            role: "admin", // 'admin' or 'learner'
-            avatar: "سم",
-            completedLessons: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11],
-            aiEvaluations: 0,
-            avgAiScore: 0,
-            speakingPractices: 0,
-            enrolledDate: "2026/01/01"
-        };
+        let currentUser = null;
 
         let LMS_EMPLOYEES_CACHE = [];
         let lmsFilteredEmployees = [];
@@ -5322,18 +5316,29 @@ Return ONLY a valid JSON object matching this exact schema:
 
         // Sign Out & Lock Platform
         function logout() {
-            if ('speechSynthesis' in window) {
-                window.speechSynthesis.cancel();
+            try {
+                if ('speechSynthesis' in window) {
+                    window.speechSynthesis.cancel();
+                }
+            } catch (e) {
+                console.warn("Speech cancel error on logout:", e);
+            }
+
+            // 1. Immediately wipe session & user state
+            try {
+                localStorage.removeItem('YSL_ACTIVE_SESSION');
+            } catch (e) {
+                console.warn("Session remove error:", e);
             }
             currentUser = null;
-            applyRolePermissions();
-            localStorage.removeItem('YSL_ACTIVE_SESSION');
 
+            // 2. Switch view back to Login / Auth Gate immediately
             const authScreen = document.getElementById('auth-screen');
             const mainApp = document.getElementById('app-main-content');
             if (authScreen) authScreen.classList.remove('hidden');
             if (mainApp) mainApp.classList.add('hidden');
 
+            // 3. Clear credential input fields & notifications
             const uInput = document.getElementById('login-username');
             const pInput = document.getElementById('login-password');
             if (uInput) uInput.value = '';
@@ -5344,12 +5349,39 @@ Return ONLY a valid JSON object matching this exact schema:
             if (errBox) errBox.classList.add('hidden');
             if (succBox) succBox.classList.add('hidden');
 
-            lucide.createIcons();
+            // 4. Close any open mobile menu or modals
+            const mobileMenu = document.getElementById('mobile-menu');
+            if (mobileMenu && !mobileMenu.classList.contains('hidden')) {
+                mobileMenu.classList.add('hidden');
+            }
+            const apiModal = document.getElementById('api-modal');
+            if (apiModal) apiModal.classList.add('hidden');
+            const addUserModal = document.getElementById('add-user-modal');
+            if (addUserModal) addUserModal.classList.add('hidden');
+            const deleteModal = document.getElementById('delete-confirm-modal');
+            if (deleteModal) deleteModal.classList.add('hidden');
+
+            // 5. Safely re-apply role permissions (hides admin elements, AI buttons, etc.)
+            try {
+                applyRolePermissions();
+            } catch (e) {
+                console.warn("applyRolePermissions error on logout:", e);
+            }
+
+            // 6. Refresh icons and scroll to top of login gate
+            if (window.lucide && typeof lucide.createIcons === 'function') {
+                lucide.createIcons();
+            }
+            window.scrollTo({ top: 0, behavior: 'smooth' });
         }
+
+        // Global aliases for compatibility
+        window.logout = logout;
+        window.handleLogout = logout;
 
         // Apply Role Permissions (Learner vs Admin)
         function applyRolePermissions() {
-            const isAdmin = currentUser && currentUser.role === 'admin';
+            const isAdmin = !!(currentUser && currentUser.role === 'admin');
 
             document.querySelectorAll('.admin-only').forEach(el => {
                 if (isAdmin) {
@@ -5359,7 +5391,7 @@ Return ONLY a valid JSON object matching this exact schema:
                 }
             });
 
-            // Explicit controls for AI buttons & status
+            // Explicit controls for AI buttons & status (Strictly Admin Only)
             const headerAiBtn = document.getElementById('header-ai-status-btn');
             if (headerAiBtn) {
                 if (isAdmin) headerAiBtn.classList.remove('hidden');
@@ -5378,20 +5410,42 @@ Return ONLY a valid JSON object matching this exact schema:
 
             const roleBadge = document.getElementById('user-role-badge');
             if (roleBadge) {
-                if (isAdmin) {
-                    roleBadge.innerText = `مشرف / مدير LMS • ${currentUser.id}`;
-                    roleBadge.className = 'text-[11px] font-bold text-amber-300 bg-amber-400/20 px-2 py-0.5 rounded-md border border-amber-300/30';
+                if (currentUser) {
+                    if (isAdmin) {
+                        roleBadge.innerText = `مشرف / مدير LMS • ${currentUser.id || ''}`;
+                        roleBadge.className = 'text-[11px] font-bold text-amber-300 bg-amber-400/20 px-2 py-0.5 rounded-md border border-amber-300/30';
+                    } else {
+                        roleBadge.innerText = `متعلم / موظف • ${currentUser.id || ''}`;
+                        roleBadge.className = 'text-[11px] font-bold text-teal-300 bg-teal-400/20 px-2 py-0.5 rounded-md border border-teal-300/30';
+                    }
                 } else {
-                    roleBadge.innerText = `متعلم / موظف • ${currentUser.id}`;
-                    roleBadge.className = 'text-[11px] font-bold text-teal-300 bg-teal-400/20 px-2 py-0.5 rounded-md border border-teal-300/30';
+                    roleBadge.innerText = '';
                 }
             }
 
-            const nameDisplay = document.getElementById('user-name-display');
-            if (nameDisplay) nameDisplay.innerText = currentUser ? currentUser.name : '';
+            const nameDisplay = document.getElementById('user-name-display') || document.getElementById('user-name-badge');
+            if (nameDisplay) {
+                nameDisplay.innerText = currentUser ? (currentUser.name || '') : '';
+            }
 
             const avatarBadge = document.getElementById('user-avatar-badge');
-            if (avatarBadge) avatarBadge.innerText = currentUser ? (currentUser.avatar || "مو") : "مو";
+            if (avatarBadge) {
+                avatarBadge.innerText = currentUser ? (currentUser.avatar || "مو") : "مو";
+            }
+
+            // Mobile menu badges
+            const mobAvatar = document.getElementById('mobile-avatar-badge');
+            if (mobAvatar) {
+                mobAvatar.innerText = currentUser ? (currentUser.avatar || "مو") : "مو";
+            }
+            const mobName = document.getElementById('mobile-name-badge');
+            if (mobName) {
+                mobName.innerText = currentUser ? (currentUser.name || '') : '';
+            }
+            const mobRole = document.getElementById('mobile-role-badge');
+            if (mobRole) {
+                mobRole.innerText = currentUser ? (isAdmin ? `مشرف • ${currentUser.id || ''}` : `موظف • ${currentUser.dept || currentUser.id || ''}`) : '';
+            }
         }
 
         function updateUserProfileUI() {
