@@ -3278,6 +3278,14 @@ Return ONLY a valid JSON object matching this exact schema:
                     origin: { y: 0.6 }
                 });
             }
+
+            // Sync AI Writing Score directly to Supabase ysl_progress
+            if (currentUser && currentUser.role !== 'admin' && typeof persistEmployeeProgressToSupabase === 'function') {
+                persistEmployeeProgressToSupabase(currentUser.id, {
+                    ai_writing_score: finalScore,
+                    last_active: typeof getArabicFormattedTimestamp === "function" ? getArabicFormattedTimestamp() : "اليوم"
+                });
+            }
         }
 
         // ==========================================
@@ -3325,6 +3333,10 @@ Return ONLY a valid JSON object matching this exact schema:
                 utterance.lang = 'en-US';
                 utterance.rate = 0.9;
                 window.speechSynthesis.speak(utterance);
+                // Track listening engagement in Supabase
+                if (typeof trackAudioInteraction === 'function') {
+                    trackAudioInteraction(1);
+                }
             } else {
                 alert("خاصية تحويل النص إلى صوت غير مدعومة في متصفحك الحالي.");
             }
@@ -3468,6 +3480,11 @@ Return ONLY a valid JSON object matching this exact schema:
             }
 
             document.getElementById('speaking-result-container').classList.remove('hidden');
+
+            // Record and sync speaking practice activity to Supabase
+            if (typeof trackAudioInteraction === 'function') {
+                trackAudioInteraction(1);
+            }
         }
 
         // ==========================================
@@ -4261,6 +4278,11 @@ Return ONLY a valid JSON object matching this exact schema:
                     if (statusLabel) statusLabel.innerText = `جاري قراءة نص الدرس (سرعة ${globalAudioSpeed}x)...`;
                     lucide.createIcons();
 
+                    // Track audio listening practice in Supabase
+                    if (typeof trackAudioInteraction === 'function') {
+                        trackAudioInteraction(1);
+                    }
+
                     audioCurrentPercent = 0;
                     audioProgressInterval = setInterval(() => {
                         audioCurrentPercent = Math.min(100, audioCurrentPercent + 1.2);
@@ -4818,7 +4840,7 @@ Return ONLY a valid JSON object matching this exact schema:
                         </td>
 
                         <!-- 6. Overall Level Progress -->
-                        <td class="p-3.5 min-w-[140px]">
+                        <td class="p-3.5 min-w-[150px]">
                             <div class="space-y-1">
                                 <div class="flex items-center justify-between text-[11px] font-bold text-navy">
                                     <span>${emp.completedCount} / 11 درساً</span>
@@ -4827,11 +4849,16 @@ Return ONLY a valid JSON object matching this exact schema:
                                 <div class="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
                                     <div class="${emp.progressPct === 100 ? 'bg-emerald-500' : 'bg-teal-DEFAULT'} h-full rounded-full transition-all" style="width: ${emp.progressPct}%"></div>
                                 </div>
+                                <div class="text-[10px] text-slate-500 font-mono mt-0.5">
+                                    ${emp.completedLessons && emp.completedLessons.length > 0 
+                                        ? `<span class="text-teal-700 font-bold">الدروس:</span> <span class="bg-teal-50 text-teal-800 px-1 py-0.5 rounded border border-teal-200">[${emp.completedLessons.sort((a,b)=>a-b).join(', ')}]</span>` 
+                                        : '<span class="text-slate-400">لم ينجز دروساً</span>'}
+                                </div>
                             </div>
                         </td>
 
                         <!-- 7. 4 Language Skills Tracking -->
-                        <td class="p-3.5 min-w-[200px]">
+                        <td class="p-3.5 min-w-[210px]">
                             <div class="grid grid-cols-2 gap-1.5 text-[10px]">
                                 <span class="px-2 py-0.5 rounded-md bg-blue-50 text-blue-700 border border-blue-200/80 font-bold flex items-center justify-between" title="Reading: القراءة">
                                     <span>📖 R</span>
@@ -4845,10 +4872,14 @@ Return ONLY a valid JSON object matching this exact schema:
                                     <span>✍️ W</span>
                                     <span class="font-mono">${skills.writing > 0 ? skills.writing + '%' : '—'}</span>
                                 </span>
-                                <span class="px-2 py-0.5 rounded-md bg-purple-50 text-purple-700 border border-purple-200/80 font-bold flex items-center justify-between" title="Speaking: المحادثة والنطق">
+                                <span class="px-2 py-0.5 rounded-md bg-purple-50 text-purple-700 border border-purple-200/80 font-bold flex items-center justify-between" title="Speaking: المحادثة والصوتيات (${emp.speakingPractices || 0} تمرين/جلسة)">
                                     <span>🎙️ S</span>
-                                    <span class="font-mono">${skills.speaking}%</span>
+                                    <span class="font-mono">${skills.speaking}% (${emp.speakingPractices || 0})</span>
                                 </span>
+                            </div>
+                            <div class="text-[10px] text-slate-400 mt-1 flex items-center gap-1 font-mono">
+                                <i data-lucide="clock" class="w-3 h-3 text-slate-400"></i>
+                                <span>آخر نشاط: ${emp.lastActive || 'مؤخراً'}</span>
                             </div>
                         </td>
 
@@ -4926,42 +4957,37 @@ Return ONLY a valid JSON object matching this exact schema:
         }
 
         // Live simulation of lesson advancement for any employee (Supervisor testing feature)
-        function quickAdvanceEmployee(empId) {
-            const progDb = getProgressDb();
-            if (!progDb[empId]) {
-                progDb[empId] = {
-                    completedLessons: [],
-                    aiWritingScore: 80,
-                    speakingPractices: 2,
-                    lastActive: "اليوم"
-                };
-            }
-            const currentList = progDb[empId].completedLessons || [];
+        async function quickAdvanceEmployee(empId) {
+            const emp = LMS_EMPLOYEES_CACHE.find(e => String(e.id).trim() === String(empId).trim());
+            const currentList = emp && Array.isArray(emp.completedLessons) ? [...emp.completedLessons] : [];
             for (let i = 1; i <= 11; i++) {
                 if (!currentList.includes(i)) {
                     currentList.push(i);
                     break;
                 }
             }
-            progDb[empId].completedLessons = currentList.sort((a,b) => a - b);
-            progDb[empId].lastActive = "اليوم";
-            if (!progDb[empId].aiWritingScore) {
-                progDb[empId].aiWritingScore = Math.floor(78 + Math.random() * 18);
+            currentList.sort((a,b) => a - b);
+            const nowArabic = typeof getArabicFormattedTimestamp === "function" ? getArabicFormattedTimestamp() : "اليوم";
+
+            // Persist to Supabase
+            if (typeof persistEmployeeProgressToSupabase === "function") {
+                await persistEmployeeProgressToSupabase(empId, {
+                    completed_lessons: currentList,
+                    last_active: nowArabic
+                });
             }
-            if (currentList.length === 11) {
-                progDb[empId].completionDate = new Date().toISOString().slice(0, 10).replace(/-/g, '/');
-            }
-            saveProgressDb(progDb);
 
             // Sync with session if this is current user
-            if (currentUser && currentUser.id === empId) {
+            if (currentUser && String(currentUser.id).trim() === String(empId).trim()) {
                 currentUser.completedLessons = [...currentList];
+                currentUser.lastActive = nowArabic;
                 localStorage.setItem('YSL_ACTIVE_SESSION', JSON.stringify(currentUser));
                 updateUserProfileUI();
             }
 
-            initLmsAdmin();
+            renderLmsTable();
             confetti({ particleCount: 40, spread: 55 });
+            showLmsToast(`تم تقديم إنجاز الموظف (${empId}) ومزامنته مع Supabase بنجاح`);
         }
 
         // Official Excel (CSV) Export with UTF-8 BOM for Microsoft Excel Arabic Support
@@ -5031,7 +5057,7 @@ Return ONLY a valid JSON object matching this exact schema:
 
             document.getElementById('dossier-avatar').innerText = emp.avatar;
             document.getElementById('dossier-name').innerText = emp.name;
-            document.getElementById('dossier-meta').innerText = `الكود: ${emp.id} • الشركة: ${emp.company || 'العامة'} • انضمام: ${emp.joinDate || '2026/01/15'} • المستوى: ${emp.proficiencyLevel || 'Intermediate'}`;
+            document.getElementById('dossier-meta').innerText = `الكود: ${emp.id} • الشركة: ${emp.company || 'العامة'} • انضمام: ${emp.joinDate || '2026/01/15'} • المستوى: ${emp.proficiencyLevel || 'Intermediate'} • آخر نشاط: ${emp.lastActive || 'مؤخراً'}`;
 
             const certBtn = document.getElementById('dossier-cert-btn');
             if (emp.completedCount === 11) {
@@ -5378,29 +5404,37 @@ Return ONLY a valid JSON object matching this exact schema:
             localStorage.setItem('YSL_PROGRESS_DB', JSON.stringify(progress));
         }
 
-        // Sequential Lesson Completion Engine
-        function toggleLessonCompletion(lessonNumber) {
+        // Sequential Lesson Completion Engine with Direct Supabase ysl_progress Sync
+        async function toggleLessonCompletion(lessonNumber) {
+            if (!currentUser) return;
             if (!currentUser.completedLessons) {
                 currentUser.completedLessons = [];
             }
 
-            const idx = currentUser.completedLessons.indexOf(lessonNumber);
+            const lNum = parseInt(lessonNumber, 10);
+            const idx = currentUser.completedLessons.indexOf(lNum);
+            let newlyCompleted = false;
+
             if (idx >= 0) {
                 // Removing completion of lesson N:
                 // Strictly uncomplete any subsequent lessons (> lessonNumber) to preserve sequential integrity
-                currentUser.completedLessons = currentUser.completedLessons.filter(n => n < lessonNumber);
+                currentUser.completedLessons = currentUser.completedLessons.filter(n => n < lNum);
             } else {
                 // To complete lesson N, previous lesson (N-1) must be completed (unless N === 1 or admin)
-                if (lessonNumber > 1 && !currentUser.completedLessons.includes(lessonNumber - 1) && currentUser.role !== 'admin') {
-                    showLockedLessonAlert(lessonNumber);
+                if (lNum > 1 && !currentUser.completedLessons.includes(lNum - 1) && currentUser.role !== 'admin') {
+                    showLockedLessonAlert(lNum);
                     return;
                 }
-                if (!currentUser.completedLessons.includes(lessonNumber)) {
-                    currentUser.completedLessons.push(lessonNumber);
+                if (!currentUser.completedLessons.includes(lNum)) {
+                    currentUser.completedLessons.push(lNum);
                     currentUser.completedLessons.sort((a, b) => a - b);
+                    newlyCompleted = true;
                     confetti({ particleCount: 50, spread: 60 });
                 }
             }
+
+            const activeLessons = [...currentUser.completedLessons];
+            const nowArabic = typeof getArabicFormattedTimestamp === "function" ? getArabicFormattedTimestamp() : "اليوم";
 
             // Persist to user progress DB
             const progDb = getProgressDb();
@@ -5409,12 +5443,12 @@ Return ONLY a valid JSON object matching this exact schema:
                     completedLessons: [],
                     aiWritingScore: currentUser.avgAiScore || 0,
                     speakingPractices: currentUser.speakingPractices || 0,
-                    lastActive: "اليوم"
+                    lastActive: nowArabic
                 };
             }
-            progDb[currentUser.id].completedLessons = [...currentUser.completedLessons];
-            progDb[currentUser.id].lastActive = "اليوم";
-            if (currentUser.completedLessons.length === 11) {
+            progDb[currentUser.id].completedLessons = [...activeLessons];
+            progDb[currentUser.id].lastActive = nowArabic;
+            if (activeLessons.length === 11) {
                 progDb[currentUser.id].completionDate = new Date().toISOString().slice(0, 10);
             }
             saveProgressDb(progDb);
@@ -5423,14 +5457,14 @@ Return ONLY a valid JSON object matching this exact schema:
             localStorage.setItem('YSL_ACTIVE_SESSION', JSON.stringify(currentUser));
 
             // Sync with LMS employee cache
-            const cIdx = LMS_EMPLOYEES_CACHE.findIndex(e => e.id === currentUser.id);
+            const cIdx = LMS_EMPLOYEES_CACHE.findIndex(e => String(e.id).trim() === String(currentUser.id).trim());
             if (cIdx >= 0) {
-                LMS_EMPLOYEES_CACHE[cIdx].completedLessons = [...currentUser.completedLessons];
-                LMS_EMPLOYEES_CACHE[cIdx].completedCount = currentUser.completedLessons.length;
-                LMS_EMPLOYEES_CACHE[cIdx].progressPct = Math.round((currentUser.completedLessons.length / 11) * 100);
-                LMS_EMPLOYEES_CACHE[cIdx].status = currentUser.completedLessons.length === 11 ? 'مكتمل' : currentUser.completedLessons.length > 0 ? 'قيد الإنجاز' : 'لم يبدأ';
-                LMS_EMPLOYEES_CACHE[cIdx].lastActive = "الآن";
-                if (currentUser.completedLessons.length === 11) {
+                LMS_EMPLOYEES_CACHE[cIdx].completedLessons = [...activeLessons];
+                LMS_EMPLOYEES_CACHE[cIdx].completedCount = activeLessons.length;
+                LMS_EMPLOYEES_CACHE[cIdx].progressPct = Math.round((activeLessons.length / 11) * 100);
+                LMS_EMPLOYEES_CACHE[cIdx].status = activeLessons.length === 11 ? 'مكتمل' : activeLessons.length > 0 ? 'قيد التدريب' : 'لم يبدأ';
+                LMS_EMPLOYEES_CACHE[cIdx].lastActive = nowArabic;
+                if (activeLessons.length === 11) {
                     LMS_EMPLOYEES_CACHE[cIdx].completionDate = new Date().toISOString().slice(0, 10);
                 }
             }
@@ -5438,6 +5472,25 @@ Return ONLY a valid JSON object matching this exact schema:
             updateUserProfileUI();
             renderLessonsTab();
             initLmsAdmin();
+
+            // DIRECT SUPABASE UPSERT (Essential for real-time employee progress sync)
+            if (supabaseClient && currentUser.id && currentUser.role !== 'admin') {
+                try {
+                    const res = await persistEmployeeProgressToSupabase(currentUser.id, {
+                        completed_lessons: activeLessons,
+                        last_active: nowArabic
+                    });
+                    if (res) {
+                        if (newlyCompleted) {
+                            showLmsToast(`✅ تم حفظ إنجاز الدرس ${lNum} في قاعدة بيانات Supabase`, "success");
+                        } else {
+                            showLmsToast(`تم تحديث قائمة الدروس المكتملة في Supabase`, "info");
+                        }
+                    }
+                } catch (supErr) {
+                    console.error("Error saving progress to Supabase:", supErr);
+                }
+            }
         }
 
         // ==========================================
@@ -6059,6 +6112,36 @@ Return ONLY a valid JSON object matching this exact schema:
                         const progDb = getProgressDb();
                         if (currentUser && progDb[currentUser.id]) {
                             currentUser.completedLessons = progDb[currentUser.id].completedLessons || currentUser.completedLessons || [];
+                        }
+
+                        // Asynchronously sync with latest live progress directly from Supabase ysl_progress
+                        if (supabaseClient && currentUser && currentUser.id && currentUser.role !== 'admin') {
+                            const empId = String(currentUser.id).trim();
+                            supabaseClient
+                                .from("ysl_progress")
+                                .select("*")
+                                .eq("user_id", empId)
+                                .maybeSingle()
+                                .then(({ data: liveProg, error: pErr }) => {
+                                    if (liveProg && !pErr) {
+                                        let lList = [];
+                                        if (Array.isArray(liveProg.completed_lessons)) lList = liveProg.completed_lessons;
+                                        else if (typeof liveProg.completed_lessons === "string") {
+                                            try { lList = JSON.parse(liveProg.completed_lessons); } catch(e){}
+                                        }
+                                        currentUser.completedLessons = lList.map(n => parseInt(n, 10)).filter(n => !isNaN(n));
+                                        currentUser.speakingPractices = parseInt(liveProg.speaking_practices, 10) || 0;
+                                        currentUser.aiWritingScore = parseInt(liveProg.ai_writing_score, 10) || 0;
+                                        currentUser.avgAiScore = currentUser.aiWritingScore;
+                                        currentUser.lastActive = liveProg.last_active || "الآن";
+                                        localStorage.setItem('YSL_ACTIVE_SESSION', JSON.stringify(currentUser));
+                                        updateUserProfileUI();
+                                        if (typeof currentTab !== 'undefined' && currentTab === 'lessons') {
+                                            renderLessonsTab();
+                                        }
+                                    }
+                                })
+                                .catch(err => console.warn("Live progress sync warning:", err));
                         }
 
                         // Reveal platform & apply roles
@@ -6844,6 +6927,163 @@ Return ONLY a valid JSON object matching this exact schema:
             }
         }
 
+        // ==========================================
+        // 22. REAL-TIME EMPLOYEE PROGRESS SYNC TO SUPABASE (ysl_progress)
+        // ==========================================
+        function getArabicFormattedTimestamp() {
+            try {
+                const now = new Date();
+                return now.toLocaleString('ar-SA', {
+                    year: 'numeric',
+                    month: '2-digit',
+                    day: '2-digit',
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    hour12: true
+                });
+            } catch (e) {
+                return new Date().toISOString().slice(0, 16).replace('T', ' ');
+            }
+        }
+        window.getArabicFormattedTimestamp = getArabicFormattedTimestamp;
+
+        async function persistEmployeeProgressToSupabase(empId, updates = {}) {
+            if (!supabaseClient || !empId) return null;
+            const userId = String(empId).trim();
+            if (!userId) return null;
+
+            try {
+                // 1. Fetch current row from ysl_progress to avoid overwriting unpassed fields
+                const { data: curRow } = await supabaseClient
+                    .from("ysl_progress")
+                    .select("*")
+                    .eq("user_id", userId)
+                    .maybeSingle();
+
+                // 2. Parse current completed lessons safely
+                let currentLessons = [];
+                if (curRow) {
+                    if (Array.isArray(curRow.completed_lessons)) currentLessons = curRow.completed_lessons;
+                    else if (typeof curRow.completed_lessons === "string") {
+                        try {
+                            const parsed = JSON.parse(curRow.completed_lessons);
+                            if (Array.isArray(parsed)) currentLessons = parsed;
+                        } catch(e) {}
+                    }
+                } else if (currentUser && String(currentUser.id).trim() === userId && Array.isArray(currentUser.completedLessons)) {
+                    currentLessons = currentUser.completedLessons;
+                }
+
+                // 3. Merge completed_lessons
+                let finalLessons = updates.completed_lessons !== undefined 
+                    ? updates.completed_lessons 
+                    : currentLessons;
+                // Ensure unique integer array (1 to 11) sorted
+                finalLessons = Array.from(new Set(
+                    finalLessons.map(n => parseInt(n, 10)).filter(n => !isNaN(n) && n >= 1 && n <= 11)
+                )).sort((a,b) => a - b);
+
+                // 4. Merge speaking_practices
+                const finalSpeaking = updates.speaking_practices !== undefined 
+                    ? parseInt(updates.speaking_practices, 10) 
+                    : (curRow && curRow.speaking_practices !== undefined 
+                        ? parseInt(curRow.speaking_practices, 10) 
+                        : (currentUser && String(currentUser.id).trim() === userId ? parseInt(currentUser.speakingPractices, 10) : 0)) || 0;
+
+                // 5. Merge ai_writing_score
+                const finalAiScore = updates.ai_writing_score !== undefined 
+                    ? parseInt(updates.ai_writing_score, 10) 
+                    : (curRow && curRow.ai_writing_score !== undefined 
+                        ? parseInt(curRow.ai_writing_score, 10) 
+                        : (currentUser && String(currentUser.id).trim() === userId ? parseInt(currentUser.aiWritingScore, 10) : 0)) || 0;
+
+                const now = new Date();
+                const lastActiveTime = updates.last_active || getArabicFormattedTimestamp();
+
+                const payload = {
+                    user_id: userId,
+                    completed_lessons: finalLessons,
+                    ai_writing_score: finalAiScore,
+                    speaking_practices: finalSpeaking,
+                    last_active: lastActiveTime,
+                    updated_at: now.toISOString()
+                };
+
+                // Upsert directly into ysl_progress with onConflict: 'user_id'
+                const { error: upsertErr } = await supabaseClient
+                    .from("ysl_progress")
+                    .upsert(payload, { onConflict: "user_id" });
+
+                if (upsertErr) {
+                    console.error("Supabase ysl_progress upsert error for user:", userId, upsertErr);
+                    return null;
+                }
+
+                console.log("Supabase ysl_progress upsert success for user:", userId, payload);
+
+                // Update active user session if currentUser matches
+                if (currentUser && String(currentUser.id).trim() === userId) {
+                    currentUser.completedLessons = [...finalLessons];
+                    currentUser.speakingPractices = finalSpeaking;
+                    currentUser.aiWritingScore = finalAiScore;
+                    currentUser.avgAiScore = finalAiScore;
+                    currentUser.lastActive = lastActiveTime;
+                    localStorage.setItem('YSL_ACTIVE_SESSION', JSON.stringify(currentUser));
+                    updateUserProfileUI();
+                }
+
+                // Update local storage progress DB backup
+                const progDb = getProgressDb();
+                progDb[userId] = {
+                    completedLessons: [...finalLessons],
+                    aiWritingScore: finalAiScore,
+                    speakingPractices: finalSpeaking,
+                    lastActive: lastActiveTime
+                };
+                saveProgressDb(progDb);
+
+                // Update in LMS Employees Cache
+                const cIdx = LMS_EMPLOYEES_CACHE.findIndex(e => String(e.id).trim() === userId);
+                if (cIdx >= 0) {
+                    LMS_EMPLOYEES_CACHE[cIdx].completedLessons = [...finalLessons];
+                    LMS_EMPLOYEES_CACHE[cIdx].completedCount = finalLessons.length;
+                    LMS_EMPLOYEES_CACHE[cIdx].progressPct = Math.round((finalLessons.length / 11) * 100);
+                    LMS_EMPLOYEES_CACHE[cIdx].status = finalLessons.length === 11 ? "مكتمل" : (finalLessons.length > 0 ? "قيد التدريب" : "لم يبدأ");
+                    LMS_EMPLOYEES_CACHE[cIdx].speakingPractices = finalSpeaking;
+                    LMS_EMPLOYEES_CACHE[cIdx].aiWritingScore = finalAiScore;
+                    LMS_EMPLOYEES_CACHE[cIdx].lastActive = lastActiveTime;
+                }
+
+                return payload;
+            } catch (err) {
+                console.error("Exception in persistEmployeeProgressToSupabase:", err);
+                return null;
+            }
+        }
+        window.persistEmployeeProgressToSupabase = persistEmployeeProgressToSupabase;
+
+        // Debounced Audio/Speaking Practice Tracker
+        let audioTrackDebounceTimer = null;
+        function trackAudioInteraction(increment = 1) {
+            if (!currentUser || currentUser.role === 'admin') return;
+            const curSpeaking = (currentUser.speakingPractices || 0) + increment;
+            currentUser.speakingPractices = curSpeaking;
+            localStorage.setItem('YSL_ACTIVE_SESSION', JSON.stringify(currentUser));
+            updateUserProfileUI();
+
+            clearTimeout(audioTrackDebounceTimer);
+            audioTrackDebounceTimer = setTimeout(async () => {
+                const res = await persistEmployeeProgressToSupabase(currentUser.id, {
+                    speaking_practices: currentUser.speakingPractices,
+                    last_active: getArabicFormattedTimestamp()
+                });
+                if (res) {
+                    console.log("Audio/Speaking practice synced to Supabase:", currentUser.speakingPractices);
+                }
+            }, 800);
+        }
+        window.trackAudioInteraction = trackAudioInteraction;
+
         // SQL Schema Modal Helpers
         function openSupabaseSqlModal() {
             const modal = document.getElementById("supabase-sql-modal");
@@ -7502,12 +7742,37 @@ Return ONLY a valid JSON object matching this exact schema:
                 const progMap = {};
                 if (progressData) {
                     progressData.forEach(row => {
-                        progMap[row.user_id] = {
-                            completedLessons: Array.isArray(row.completed_lessons) ? row.completed_lessons : [],
-                            aiWritingScore: row.ai_writing_score || 0,
-                            speakingPractices: row.speaking_practices || 0,
-                            lastActive: row.last_active || "مؤخراً"
+                        if (!row || !row.user_id) return;
+                        const uId = String(row.user_id).trim();
+
+                        let lessons = [];
+                        if (Array.isArray(row.completed_lessons)) {
+                            lessons = row.completed_lessons;
+                        } else if (typeof row.completed_lessons === "string") {
+                            try {
+                                const parsed = JSON.parse(row.completed_lessons);
+                                if (Array.isArray(parsed)) lessons = parsed;
+                            } catch (e) {}
+                        }
+                        lessons = lessons.map(n => parseInt(n, 10)).filter(n => !isNaN(n) && n >= 1 && n <= 11);
+
+                        let lastActiveVal = row.last_active;
+                        if (!lastActiveVal && row.updated_at) {
+                            try {
+                                lastActiveVal = new Date(row.updated_at).toLocaleString('ar-SA');
+                            } catch (e) {}
+                        }
+
+                        const pObj = {
+                            completedLessons: lessons,
+                            aiWritingScore: parseInt(row.ai_writing_score, 10) || 0,
+                            speakingPractices: parseInt(row.speaking_practices, 10) || 0,
+                            lastActive: lastActiveVal || "مؤخراً",
+                            updatedAt: row.updated_at
                         };
+
+                        progMap[uId] = pObj;
+                        progMap[uId.toLowerCase()] = pObj;
                     });
                 }
 
@@ -7515,11 +7780,12 @@ Return ONLY a valid JSON object matching this exact schema:
                 const learnerAccounts = (accountsData || []).filter(acc => acc.role !== "admin");
 
                 LMS_EMPLOYEES_CACHE = learnerAccounts.map(acc => {
-                    const userProg = progMap[acc.id] || {
+                    const accId = String(acc.id).trim();
+                    const userProg = progMap[accId] || progMap[accId.toLowerCase()] || {
                         completedLessons: [],
                         aiWritingScore: 0,
                         speakingPractices: 0,
-                        lastActive: "تم التسجيل حديثاً"
+                        lastActive: "لم يبدأ بعد"
                     };
 
                     const compLessons = [...(userProg.completedLessons || [])];
@@ -7611,10 +7877,11 @@ Return ONLY a valid JSON object matching this exact schema:
             showLmsToast("تم حذف الموظف بنجاح من قاعدة بيانات Supabase");
         };
 
-        // Replace window.executeLogin to check Supabase directly
+        // Replace window.executeLogin to check Supabase directly and load real progress from ysl_progress
         const originalExecuteLogin = window.executeLogin;
         window.executeLogin = async function(username, password) {
-            const uNorm = (username || "").trim().toLowerCase();
+            const rawUser = (username || "").trim();
+            const uNorm = rawUser.toLowerCase();
             const pNorm = (password || "").trim();
 
             if (uNorm === "admin") {
@@ -7631,15 +7898,133 @@ Return ONLY a valid JSON object matching this exact schema:
 
             if (supabaseClient && uNorm !== "admin") {
                 try {
-                    const { data: userRow } = await supabaseClient
+                    // Match by username (case-insensitive), or id (exact string), or email (case-insensitive)
+                    let { data: userRow } = await supabaseClient
                         .from("ysl_accounts")
                         .select("*")
                         .ilike("username", uNorm)
                         .eq("password", pNorm)
                         .maybeSingle();
 
+                    if (!userRow) {
+                        const { data: byIdRow } = await supabaseClient
+                            .from("ysl_accounts")
+                            .select("*")
+                            .eq("id", rawUser)
+                            .eq("password", pNorm)
+                            .maybeSingle();
+                        userRow = byIdRow;
+                    }
+
+                    if (!userRow) {
+                        const { data: byEmailRow } = await supabaseClient
+                            .from("ysl_accounts")
+                            .select("*")
+                            .ilike("email", uNorm)
+                            .eq("password", pNorm)
+                            .maybeSingle();
+                        userRow = byEmailRow;
+                    }
+
                     if (userRow) {
-                        executeDirectSessionLogin(userRow);
+                        const empId = String(userRow.id).trim();
+
+                        // Fetch employee's real live progress from ysl_progress
+                        const { data: progRow } = await supabaseClient
+                            .from("ysl_progress")
+                            .select("*")
+                            .eq("user_id", empId)
+                            .maybeSingle();
+
+                        let completedLessons = [];
+                        if (progRow) {
+                            if (Array.isArray(progRow.completed_lessons)) {
+                                completedLessons = progRow.completed_lessons;
+                            } else if (typeof progRow.completed_lessons === "string") {
+                                try {
+                                    const parsed = JSON.parse(progRow.completed_lessons);
+                                    if (Array.isArray(parsed)) completedLessons = parsed;
+                                } catch (e) {}
+                            }
+                        } else {
+                            // First time login - initialize progress record in ysl_progress
+                            await supabaseClient.from("ysl_progress").upsert({
+                                user_id: empId,
+                                completed_lessons: [],
+                                ai_writing_score: 0,
+                                speaking_practices: 0,
+                                last_active: typeof getArabicFormattedTimestamp === "function" ? getArabicFormattedTimestamp() : "الآن",
+                                updated_at: new Date().toISOString()
+                            }, { onConflict: "user_id" });
+                        }
+
+                        completedLessons = completedLessons.map(n => parseInt(n, 10)).filter(n => !isNaN(n) && n >= 1 && n <= 11);
+                        const speakingPractices = progRow && progRow.speaking_practices !== undefined ? parseInt(progRow.speaking_practices, 10) : 0;
+                        const aiWritingScore = progRow && progRow.ai_writing_score !== undefined ? parseInt(progRow.ai_writing_score, 10) : 0;
+                        const lastActive = progRow?.last_active || (typeof getArabicFormattedTimestamp === "function" ? getArabicFormattedTimestamp() : "الآن");
+
+                        // Establish authenticated session with STRICT TEXT id
+                        currentUser = {
+                            id: empId, // Exact string TEXT
+                            number: userRow.number || (empId.match(/\d+/) ? parseInt(empId.match(/\d+/)[0], 10) : 0),
+                            username: userRow.username,
+                            name: userRow.name,
+                            email: userRow.email || `${userRow.username}@company.sa`,
+                            company: (userRow.company || userRow.dept || "الشركة العامة").trim(),
+                            dept: userRow.dept || "العامة",
+                            proficiencyLevel: userRow.proficiency_level || "Intermediate (متوسط B1-B2)",
+                            role: userRow.role || "learner",
+                            avatar: userRow.avatar || (userRow.name ? userRow.name.split(' ').map(w => w.charAt(0)).slice(0, 2).join('') : "مو"),
+                            completedLessons: completedLessons,
+                            aiWritingScore: aiWritingScore,
+                            avgAiScore: aiWritingScore,
+                            speakingPractices: speakingPractices,
+                            lastActive: lastActive,
+                            enrolledDate: userRow.created_at || new Date().toISOString().slice(0, 10)
+                        };
+
+                        // Store session in localStorage
+                        localStorage.setItem('YSL_ACTIVE_SESSION', JSON.stringify(currentUser));
+
+                        // Store in local progDb for backup
+                        const progDb = getProgressDb();
+                        progDb[empId] = {
+                            completedLessons: [...completedLessons],
+                            aiWritingScore: aiWritingScore,
+                            speakingPractices: speakingPractices,
+                            lastActive: lastActive
+                        };
+                        saveProgressDb(progDb);
+
+                        // Asynchronously update last_active timestamp in Supabase
+                        if (typeof persistEmployeeProgressToSupabase === "function") {
+                            persistEmployeeProgressToSupabase(empId, {
+                                last_active: typeof getArabicFormattedTimestamp === "function" ? getArabicFormattedTimestamp() : "الآن"
+                            });
+                        }
+
+                        // Reveal UI and transition to lessons tab
+                        const errBox = document.getElementById('auth-error-box');
+                        const succBox = document.getElementById('auth-success-box');
+                        const succMsg = document.getElementById('auth-success-msg');
+                        if (errBox) errBox.classList.add('hidden');
+                        if (succBox && succMsg) {
+                            succMsg.innerText = `Welcome back, ${currentUser.name}! Access granted.`;
+                            succBox.classList.remove('hidden');
+                        }
+
+                        setTimeout(() => {
+                            const authScreen = document.getElementById('auth-screen');
+                            const mainApp = document.getElementById('app-main-content');
+                            if (authScreen) authScreen.classList.add('hidden');
+                            if (mainApp) mainApp.classList.remove('hidden');
+
+                            applyRolePermissions();
+                            updateUserProfileUI();
+                            confetti({ particleCount: 50, spread: 60 });
+                            switchTab('lessons');
+                        }, 350);
+
                         return;
                     }
                 } catch (e) {
