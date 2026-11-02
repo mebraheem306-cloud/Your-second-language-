@@ -974,23 +974,30 @@
                 </div>
             </div>
 
-            <!-- Department Matrix Overview -->
-            <div class="bg-white p-6 rounded-3xl border border-slate-200/80 shadow-sm space-y-4">
-                <div class="flex items-center justify-between">
+            <!-- Company Training Progress Distribution (توزيع نسبة إنجاز التدريب حسب الشركات) -->
+            <div class="bg-white p-6 sm:p-7 rounded-3xl border border-slate-200/80 shadow-sm space-y-5">
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-4">
                     <div>
-                        <h3 class="font-extrabold text-navy text-base flex items-center gap-2">
+                        <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-teal-50 border border-teal-200 text-teal-700 text-xs font-bold mb-1.5">
+                            <i data-lucide="building" class="w-3.5 h-3.5 text-teal-600"></i>
+                            <span>Enterprise Companies Analytics</span>
+                        </div>
+                        <h3 class="font-black text-navy text-base sm:text-lg flex items-center gap-2">
                             <i data-lucide="building-2" class="w-5 h-5 text-teal-600"></i>
-                            <span id="dept-matrix-title">توزيع نسبة إنجاز التدريب حسب الإدارات والأقسام:</span>
+                            <span id="company-matrix-title">توزيع نسبة إنجاز التدريب حسب الشركات (Company Distribution)</span>
                         </h3>
+                        <p class="text-xs text-slate-500 mt-0.5">متابعة متوسط تقدم وإنجاز منسوبي كل شركة على حدة مع تفصيل نسب مهارات اللغة الأربع (Reading, Listening, Writing, Speaking)</p>
                     </div>
-                    <span class="text-xs text-slate-500 font-medium flex items-center gap-1.5">
-                        <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-                        محدث لحظياً ومباشر
-                    </span>
+                    <div class="flex items-center gap-2">
+                        <span class="text-xs text-slate-500 font-medium flex items-center gap-1.5 bg-slate-50 px-3 py-1.5 rounded-xl border border-slate-200/60">
+                            <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                            محدث لحظياً ومباشر
+                        </span>
+                    </div>
                 </div>
 
-                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5" id="dept-matrix-grid">
-                    <!-- Populated dynamically via JS -->
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4" id="company-matrix-grid">
+                    <!-- Populated dynamically via JS renderCompanyMatrix() -->
                 </div>
             </div>
 
@@ -1002,7 +1009,7 @@
                             <i data-lucide="table" class="w-5 h-5 text-teal-DEFAULT"></i>
                             <span>سجل بيانات وتتبع الموظفين (Employee Records Directory)</span>
                         </h3>
-                        <p class="text-xs text-slate-500 mt-0.5">تصفح وتتبع أداء الموظفين المسجلين، نسب الإنجاز، ونتائج التقييمات الذكية</p>
+                        <p class="text-xs text-slate-500 mt-0.5">تتبع أداء الموظفين، الشركة، تاريخ الانضمام، المستوى الفعلي، والمهارات اللغوية الأربع</p>
                     </div>
 
                     <!-- Filter & Action Controls -->
@@ -1019,28 +1026,30 @@
                         </button>
 
                         <!-- Search Box -->
-                        <div class="relative w-full sm:w-56">
-                            <input type="text" id="lms-search-input" oninput="filterLmsEmployees()" placeholder="ابحث بالاسم أو الرقم الوظيفي..."
+                        <div class="relative w-full sm:w-52">
+                            <input type="text" id="lms-search-input" oninput="filterLmsEmployees()" placeholder="ابحث بالاسم، الكود، الشركة..."
                                 class="w-full pl-3 pr-9 py-2 rounded-xl border border-slate-300 text-xs focus:ring-2 focus:ring-teal-DEFAULT outline-none">
                             <i data-lucide="search" class="w-4 h-4 text-slate-400 absolute top-2.5 right-3"></i>
                         </div>
 
-                        <!-- Department Filter -->
-                        <select id="lms-dept-filter" onchange="filterLmsEmployees()" class="p-2 border border-slate-300 rounded-xl text-xs font-semibold text-navy outline-none bg-slate-50">
-                            <option value="ALL">جميع الأقسام (All)</option>
-                            <option value="خدمة العملاء">خدمة العملاء</option>
-                            <option value="تقنية المعلومات">تقنية المعلومات</option>
-                            <option value="الموارد البشرية">الموارد البشرية</option>
-                            <option value="المبيعات والتسويق">المبيعات والتسويق</option>
-                            <option value="العمليات واللوجستيات">العمليات واللوجستيات</option>
-                            <option value="الإدارة والمالية">الإدارة والمالية</option>
+                        <!-- Dynamic Company Filter -->
+                        <select id="lms-company-filter" onchange="filterLmsEmployees()" class="p-2 border border-slate-300 rounded-xl text-xs font-semibold text-navy outline-none bg-slate-50">
+                            <option value="ALL">كافة الشركات (All Companies)</option>
+                        </select>
+
+                        <!-- Proficiency Level Filter -->
+                        <select id="lms-level-filter" onchange="filterLmsEmployees()" class="p-2 border border-slate-300 rounded-xl text-xs font-semibold text-navy outline-none bg-slate-50">
+                            <option value="ALL">كافة المستويات (All Levels)</option>
+                            <option value="Beginner">مبتدئ (Beginner)</option>
+                            <option value="Intermediate">متوسط (Intermediate B1-B2)</option>
+                            <option value="Advanced">متقدم (Advanced)</option>
                         </select>
 
                         <!-- Status Filter -->
                         <select id="lms-status-filter" onchange="filterLmsEmployees()" class="p-2 border border-slate-300 rounded-xl text-xs font-semibold text-navy outline-none bg-slate-50">
                             <option value="ALL">كافة الحالات (Status)</option>
                             <option value="COMPLETED">مكتمل (100%)</option>
-                            <option value="IN_PROGRESS">قيد الإنجاز</option>
+                            <option value="IN_PROGRESS">قيد التدريب</option>
                             <option value="NOT_STARTED">لم يبدأ بعد</option>
                         </select>
                     </div>
@@ -1053,16 +1062,17 @@
                 </div>
 
                 <!-- Table Container (Responsive) -->
-                <div class="overflow-x-auto border border-slate-200/80 rounded-2xl">
+                <div class="overflow-x-auto border border-slate-200/80 rounded-2xl shadow-sm">
                     <table class="w-full text-right text-xs">
                         <thead class="bg-slate-50 text-slate-700 font-bold border-b border-slate-200">
                             <tr>
-                                <th class="p-3.5">الموظف</th>
-                                <th class="p-3.5">الرقم الوظيفي</th>
-                                <th class="p-3.5">الإدارة / القسم</th>
-                                <th class="p-3.5">الدروس المنجزة</th>
-                                <th class="p-3.5 text-center">نسبة الإنجاز</th>
-                                <th class="p-3.5 text-center">معدل AI</th>
+                                <th class="p-3.5">اسم الموظف</th>
+                                <th class="p-3.5">الشركة</th>
+                                <th class="p-3.5">الكود الوظيفي</th>
+                                <th class="p-3.5">تاريخ الانضمام</th>
+                                <th class="p-3.5">المستوى الفعلي</th>
+                                <th class="p-3.5 min-w-[140px]">التقدم الإجمالي</th>
+                                <th class="p-3.5 min-w-[200px]">تتبع المهارات الـ 4 (R, L, W, S)</th>
                                 <th class="p-3.5 text-center">الحالة</th>
                                 <th class="p-3.5 text-center">الإجراءات</th>
                             </tr>
@@ -1160,6 +1170,32 @@
                         <label class="font-bold text-navy block mb-1">الاسم الكامل للموظف (Full Name) <span class="text-rose-500">*</span>:</label>
                         <input type="text" id="new-user-fullname" required oninput="suggestUsername(this.value)" placeholder="مثال: خالد بن فهد الشمري"
                             class="w-full p-2.5 rounded-xl border border-slate-300 text-xs focus:ring-2 focus:ring-teal-DEFAULT outline-none">
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                        <label class="font-bold text-navy block mb-1">الشركة التابع لها الموظف (Company) <span class="text-rose-500">*</span>:</label>
+                        <input type="text" id="new-user-company" required list="companies-suggestions" placeholder="مثال: أرامكو السعودية، سابك، STC..."
+                            class="w-full p-2.5 rounded-xl border border-slate-300 text-xs focus:ring-2 focus:ring-teal-DEFAULT outline-none bg-white">
+                        <datalist id="companies-suggestions">
+                            <option value="أرامكو السعودية">
+                            <option value="شركة سابك (SABIC)">
+                            <option value="الاتصالات السعودية (STC)">
+                            <option value="مصرف الراجحي">
+                            <option value="شركة نيوم (NEOM)">
+                            <option value="الخطوط السعودية">
+                            <option value="شركة معادن">
+                            <option value="البنك الأهلي السعودي">
+                        </datalist>
+                    </div>
+                    <div>
+                        <label class="font-bold text-navy block mb-1">المستوى الفعلي المعتمد (Proficiency Level):</label>
+                        <select id="new-user-level" class="w-full p-2.5 rounded-xl border border-slate-300 text-xs focus:ring-2 focus:ring-teal-DEFAULT outline-none bg-white font-semibold">
+                            <option value="Beginner (مبتدئ A1-A2)">Beginner (مبتدئ A1-A2)</option>
+                            <option value="Intermediate (متوسط B1-B2)" selected>Intermediate (متوسط B1-B2)</option>
+                            <option value="Advanced (متقدم C1-C2)">Advanced (متقدم C1-C2)</option>
+                        </select>
                     </div>
                 </div>
 
@@ -1267,17 +1303,17 @@
                     </button>
                 </div>
                 <div class="p-2 rounded-xl bg-white border border-teal-200/60 font-mono text-[11px] text-slate-700 overflow-x-auto" dir="ltr">
-                    الرقم الوظيفي, الاسم الكامل, اسم المستخدم, كلمة المرور, البريد الإلكتروني, القسم
+                    الرقم الوظيفي, الاسم الكامل, الشركة, اسم المستخدم, كلمة المرور, البريد الإلكتروني, القسم, المستوى
                 </div>
                 <p class="text-[11px] text-slate-500 leading-relaxed">
-                    يدعم الفاصلة العادية (<code>,</code>) أو الفاصلة المنقوطة (<code>;</code>) أو مسافات الجدولة التلقائية عند النسخ من <strong>Microsoft Excel</strong> أو <strong>Google Sheets</strong>.
+                    يدعم الفاصلة (<code>,</code>) أو المنقوطة (<code>;</code>) أو النسخ المباشر من <strong>Excel / Google Sheets</strong>. في حال لم يُحدد المستوى يُعتمد تلقائياً (Intermediate B1-B2).
                 </p>
             </div>
 
             <!-- Paste Input Mode -->
             <div id="bulk-paste-container" class="space-y-1.5">
                 <label class="block text-xs font-bold text-navy">الصق بيانات الموظفين هنا (حتى 400+ موظف):</label>
-                <textarea id="bulk-raw-text" rows="8" placeholder="1001,خالد الشمري,khalid.shammari,pass123,khalid@company.sa,خدمة العملاء&#10;1002,سارة العتيبي,sara.otaibi,pass456,sara@company.sa,الموارد البشرية&#10;1003,عبدالله القحطاني,abdullah.q,pass789,abdullah@company.sa,تقنية المعلومات" class="w-full p-3 rounded-2xl border border-slate-300 text-xs font-mono text-slate-800 bg-slate-50/50 focus:bg-white focus:ring-2 focus:ring-teal-DEFAULT outline-none custom-scrollbar leading-relaxed" dir="ltr"></textarea>
+                <textarea id="bulk-raw-text" rows="8" placeholder="1001,خالد بن فهد الشمري,أرامكو السعودية,khalid.shammari,Pass@1001,khalid@company.sa,خدمة العملاء,Intermediate&#10;1002,سارة بنت فهد العتيبي,سابك,sara.otaibi,Pass@1002,sara@company.sa,الموارد البشرية,Advanced&#10;1003,عبدالله بن سعد القحطاني,الاتصالات السعودية STC,abdullah.q,Pass@1003,abdullah@company.sa,تقنية المعلومات,Intermediate" class="w-full p-3 rounded-2xl border border-slate-300 text-xs font-mono text-slate-800 bg-slate-50/50 focus:bg-white focus:ring-2 focus:ring-teal-DEFAULT outline-none custom-scrollbar leading-relaxed" dir="ltr"></textarea>
             </div>
 
             <!-- Upload File Mode -->
@@ -1323,11 +1359,11 @@
                         <thead class="bg-slate-100 text-slate-600 font-bold sticky top-0 border-b border-slate-200">
                             <tr>
                                 <th class="p-2">#</th>
-                                <th class="p-2">الرقم الوظيفي (ID)</th>
+                                <th class="p-2">الرقم الوظيفي</th>
                                 <th class="p-2">الاسم الكامل</th>
+                                <th class="p-2">الشركة</th>
                                 <th class="p-2">اسم المستخدم</th>
-                                <th class="p-2">كلمة المرور</th>
-                                <th class="p-2">القسم</th>
+                                <th class="p-2">المستوى</th>
                                 <th class="p-2">الحالة</th>
                             </tr>
                         </thead>
@@ -1634,7 +1670,7 @@
             </div>
 
             <div class="relative">
-                <pre class="bg-slate-900 text-teal-300 p-4 rounded-2xl text-[11px] font-mono overflow-x-auto leading-relaxed border border-slate-800" dir="ltr" id="supabase-sql-code-block">-- 1. جدول حسابات الطلاب والموظفين
+                <pre class="bg-slate-900 text-teal-300 p-4 rounded-2xl text-[11px] font-mono overflow-x-auto leading-relaxed border border-slate-800" dir="ltr" id="supabase-sql-code-block">-- 1. جدول حسابات الطلاب والموظفين (شاملاً الشركة والمستوى الفعلي)
 CREATE TABLE IF NOT EXISTS ysl_accounts (
     id TEXT PRIMARY KEY,
     number INT,
@@ -1642,11 +1678,17 @@ CREATE TABLE IF NOT EXISTS ysl_accounts (
     password TEXT NOT NULL,
     name TEXT NOT NULL,
     email TEXT,
+    company TEXT,
     dept TEXT,
+    proficiency_level TEXT DEFAULT 'Intermediate (B1-B2)',
     role TEXT NOT NULL DEFAULT 'learner',
     avatar TEXT,
     created_at TIMESTAMPTZ DEFAULT NOW()
 );
+
+-- تحديث الأعمدة في حال كان الجدول منشأ مسبقاً
+ALTER TABLE ysl_accounts ADD COLUMN IF NOT EXISTS company TEXT;
+ALTER TABLE ysl_accounts ADD COLUMN IF NOT EXISTS proficiency_level TEXT DEFAULT 'Intermediate (B1-B2)';
 
 -- 2. جدول تقدم الدروس والأنشطة والتقييمات
 CREATE TABLE IF NOT EXISTS ysl_progress (
@@ -1658,7 +1700,7 @@ CREATE TABLE IF NOT EXISTS ysl_progress (
     updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- 3. جدول فيديوهات الدروس المتعددة (Cloudinary)
+-- 3. جدول فيديوهات الدروس المتعددة (Supabase Storage: videos bucket)
 CREATE TABLE IF NOT EXISTS ysl_lesson_videos (
     id TEXT PRIMARY KEY,
     lesson_number INT NOT NULL,
@@ -4285,6 +4327,30 @@ Return ONLY a valid JSON object matching this exact schema:
         const LMS_PAGE_SIZE = 10;
         let selectedDossierEmp = null;
 
+        // Calculate 4 Core Language Skills (Reading, Listening, Writing, Speaking)
+        function calculateEmployeeSkills(completedCount, userProg = {}) {
+            // 1. Reading (القراءة): Based on 11 lessons reading texts & comprehension
+            const reading = Math.min(100, Math.round((completedCount / 11) * 100));
+
+            // 2. Listening (الاستماع): Dialogues and audio practice in completed lessons
+            const listeningBonus = (userProg.speakingPractices && userProg.speakingPractices > 0) ? Math.min(10, userProg.speakingPractices * 2) : 0;
+            const listening = Math.min(100, Math.round((completedCount / 11) * 90) + listeningBonus);
+
+            // 3. Writing (الكتابة): Directly from Gemini AI Evaluation Workshop (6-Rubric score out of 100)
+            const writing = userProg.aiWritingScore || 0;
+
+            // 4. Speaking (المحادثة والنطق): Voice interaction practices and conversational drills
+            const speakingSessions = userProg.speakingPractices || 0;
+            const speaking = Math.min(100, Math.round((completedCount / 11) * 35) + Math.min(65, speakingSessions * 13));
+
+            return {
+                reading,
+                listening,
+                writing,
+                speaking
+            };
+        }
+
         // Initialize LMS Admin Dashboard dynamically from LocalStorage DB
         function initLmsAdmin() {
             const accounts = getAccountsDb();
@@ -4312,20 +4378,28 @@ Return ONLY a valid JSON object matching this exact schema:
                 const compLessons = [...(userProg.completedLessons || [])];
                 const completedCount = compLessons.length;
                 const progressPct = Math.round((completedCount / 11) * 100);
-                const status = completedCount === 11 ? 'مكتمل' : (completedCount > 0 ? 'قيد الإنجاز' : 'لم يبدأ');
+                const status = completedCount === 11 ? 'مكتمل' : (completedCount > 0 ? 'قيد التدريب' : 'لم يبدأ');
+                const skills = calculateEmployeeSkills(completedCount, userProg);
+
+                const cleanJoinDate = acc.createdAt || acc.created_at || "2026/01/15";
+                const displayJoinDate = cleanJoinDate.includes('T') ? cleanJoinDate.split('T')[0].replace(/-/g, '/') : cleanJoinDate;
 
                 return {
                     id: acc.id,
-                    number: acc.number || acc.id.replace(/\D/g, '') || "1001",
+                    number: acc.number || (acc.id.match(/\d+/) ? parseInt(acc.id.match(/\d+/)[0], 10) : 1001),
                     username: acc.username,
                     name: acc.name,
-                    email: acc.email,
-                    dept: acc.dept,
+                    email: acc.email || `${acc.username}@company.sa`,
+                    company: (acc.company || acc.dept || "الشركة العامة").trim(),
+                    dept: acc.dept || "العامة",
+                    proficiencyLevel: acc.proficiency_level || acc.proficiencyLevel || "Intermediate (متوسط B1-B2)",
                     role: acc.role || 'learner',
                     avatar: acc.avatar || (acc.name ? acc.name.split(' ').map(w => w.charAt(0)).slice(0, 2).join('') : 'مو'),
+                    joinDate: displayJoinDate,
                     completedLessons: compLessons,
                     completedCount: completedCount,
                     progressPct: progressPct,
+                    skills: skills,
                     aiWritingScore: userProg.aiWritingScore || 0,
                     speakingPractices: userProg.speakingPractices || 0,
                     status: status,
@@ -4339,7 +4413,7 @@ Return ONLY a valid JSON object matching this exact schema:
             renderAdminVideoManager();
         }
 
-        // Dynamically calculate and update high-level KPIs and Department Matrix
+        // Dynamically calculate and update high-level KPIs and Company Training Distribution
         function updateLmsStats(employees) {
             const learners = employees;
             const total = learners.length;
@@ -4375,81 +4449,185 @@ Return ONLY a valid JSON object matching this exact schema:
             const elCerts = document.getElementById('kpi-certs');
             if (elCerts) elCerts.innerText = completed.toLocaleString();
 
-            const matrixTitle = document.getElementById('dept-matrix-title');
+            const matrixTitle = document.getElementById('company-matrix-title');
             if (matrixTitle) {
-                matrixTitle.innerText = `توزيع نسبة إنجاز التدريب حسب الإدارات والأقسام (${total.toLocaleString()} متعلم):`;
+                matrixTitle.innerText = `توزيع نسبة إنجاز التدريب حسب الشركات (${total.toLocaleString()} متعلم):`;
             }
 
-            renderDeptMatrix(employees);
+            // Populate Company Filter Dropdown dynamically with all unique companies
+            const compFilter = document.getElementById('lms-company-filter');
+            if (compFilter) {
+                const currentVal = compFilter.value;
+                const uniqueCompanies = Array.from(new Set(learners.map(e => e.company).filter(Boolean))).sort();
+                let optionsHtml = '<option value="ALL">كافة الشركات (All Companies)</option>';
+                uniqueCompanies.forEach(c => {
+                    optionsHtml += `<option value="${c}" ${c === currentVal ? 'selected' : ''}>${c}</option>`;
+                });
+                compFilter.innerHTML = optionsHtml;
+            }
+
+            renderCompanyMatrix(employees);
         }
 
-        // Render live Department Matrix Cards
-        function renderDeptMatrix(employees) {
-            const grid = document.getElementById('dept-matrix-grid');
+        // Render live Company Training Distribution Cards (توزيع نسبة إنجاز التدريب حسب الشركات)
+        function renderCompanyMatrix(employees) {
+            const grid = document.getElementById('company-matrix-grid');
             if (!grid) return;
 
-            const depts = [
-                { name: "خدمة العملاء", icon: "headphones" },
-                { name: "تقنية المعلومات", icon: "cpu" },
-                { name: "الموارد البشرية", icon: "users" },
-                { name: "المبيعات والتسويق", icon: "trending-up" },
-                { name: "العمليات واللوجستيات", icon: "truck" },
-                { name: "الإدارة والمالية", icon: "briefcase" }
-            ];
+            const learners = employees.filter(e => e.role !== 'admin');
+            const companiesMap = {};
 
-            grid.innerHTML = depts.map(d => {
-                const deptEmps = employees.filter(e => e.dept === d.name && e.role !== 'admin');
-                const count = deptEmps.length;
-                const completed = deptEmps.filter(e => e.completedCount >= 11).length;
-                const inProgress = deptEmps.filter(e => e.completedCount > 0 && e.completedCount < 11).length;
-                const totalProgress = deptEmps.reduce((acc, e) => acc + e.progressPct, 0);
+            learners.forEach(e => {
+                const comp = (e.company || e.dept || "الشركة العامة").trim();
+                if (!companiesMap[comp]) {
+                    companiesMap[comp] = [];
+                }
+                companiesMap[comp].push(e);
+            });
+
+            const companyNames = Object.keys(companiesMap);
+            if (companyNames.length === 0) {
+                const defaultCompanies = [
+                    { name: "أرامكو السعودية", icon: "building-2", hint: "قطاع الطاقة والنفط" },
+                    { name: "شركة سابك (SABIC)", icon: "factory", hint: "الصناعات البتروكيماوية" },
+                    { name: "الاتصالات السعودية (STC)", icon: "signal", hint: "الاتصالات والتقنية" }
+                ];
+                grid.innerHTML = defaultCompanies.map(c => `
+                    <div class="p-5 rounded-2xl border border-dashed border-slate-300 bg-slate-50/70 text-slate-500 space-y-3">
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center gap-2.5">
+                                <div class="w-9 h-9 rounded-xl bg-white border border-slate-200 text-teal-600 flex items-center justify-center font-bold text-xs shadow-sm">
+                                    <i data-lucide="${c.icon}" class="w-4 h-4"></i>
+                                </div>
+                                <div>
+                                    <h4 class="font-bold text-navy text-xs sm:text-sm">${c.name}</h4>
+                                    <span class="text-[10px] text-slate-400">${c.hint}</span>
+                                </div>
+                            </div>
+                            <span class="text-[11px] font-bold px-2 py-0.5 rounded-full bg-slate-200/80 text-slate-600 font-mono">0 موظف</span>
+                        </div>
+                        <p class="text-[11px] text-slate-400">بانتظار إضافة موظفي الشركة لبدء احتساب متوسط التقدم وإحصاء المهارات الـ 4.</p>
+                    </div>
+                `).join('');
+                if (window.lucide) lucide.createIcons();
+                return;
+            }
+
+            grid.innerHTML = companyNames.map(compName => {
+                const compEmps = companiesMap[compName];
+                const count = compEmps.length;
+                const completed = compEmps.filter(e => e.completedCount >= 11).length;
+                const inProgress = compEmps.filter(e => e.completedCount > 0 && e.completedCount < 11).length;
+
+                const totalProgress = compEmps.reduce((acc, e) => acc + (e.progressPct || 0), 0);
                 const avgProgress = count > 0 ? Math.round(totalProgress / count) : 0;
 
+                // 4 Skills Averages
+                const avgReading = Math.round(compEmps.reduce((acc, e) => acc + (e.skills ? e.skills.reading : 0), 0) / count);
+                const avgListening = Math.round(compEmps.reduce((acc, e) => acc + (e.skills ? e.skills.listening : 0), 0) / count);
+                const avgWriting = Math.round(compEmps.reduce((acc, e) => acc + (e.skills ? e.skills.writing : 0), 0) / count);
+                const avgSpeaking = Math.round(compEmps.reduce((acc, e) => acc + (e.skills ? e.skills.speaking : 0), 0) / count);
+
                 return `
-                    <div class="p-4 rounded-2xl border border-slate-200/80 bg-slate-50/50 hover:bg-slate-50 transition space-y-3">
+                    <div class="p-5 rounded-2xl border border-slate-200/90 bg-white hover:border-teal-DEFAULT/40 hover:shadow-md transition space-y-4">
                         <div class="flex items-center justify-between">
-                            <div class="flex items-center gap-2">
-                                <div class="w-8 h-8 rounded-lg bg-white border border-slate-200 text-slate-700 flex items-center justify-center font-bold text-xs shadow-sm">
-                                    <i data-lucide="${d.icon}" class="w-4 h-4 text-teal-600"></i>
+                            <div class="flex items-center gap-2.5">
+                                <div class="w-10 h-10 rounded-xl bg-teal-50 border border-teal-200 text-teal-700 flex items-center justify-center font-bold text-xs shadow-sm flex-shrink-0">
+                                    <i data-lucide="building-2" class="w-5 h-5 text-teal-600"></i>
                                 </div>
-                                <span class="font-extrabold text-navy text-xs sm:text-sm">${d.name}</span>
+                                <div>
+                                    <h4 class="font-extrabold text-navy text-xs sm:text-sm flex items-center gap-1.5">
+                                        <span>${compName}</span>
+                                    </h4>
+                                    <span class="text-[10px] text-slate-400 font-medium">سجل الشركة المؤسسي</span>
+                                </div>
                             </div>
-                            <span class="text-xs font-bold px-2.5 py-0.5 rounded-full bg-white text-navy border border-slate-200 font-mono">
+                            <span class="text-xs font-bold px-2.5 py-1 rounded-full bg-slate-100 text-navy border border-slate-200 font-mono">
                                 ${count} موظف
                             </span>
                         </div>
 
-                        <div class="space-y-1">
-                            <div class="flex items-center justify-between text-[11px] font-bold text-slate-600">
-                                <span>متوسط الإنجاز</span>
-                                <span class="font-mono text-teal-700 font-bold">${avgProgress}%</span>
+                        <!-- Progress Bar & Percentage -->
+                        <div class="space-y-1.5">
+                            <div class="flex items-center justify-between text-xs font-bold">
+                                <span class="text-slate-600">متوسط إنجاز التدريب</span>
+                                <span class="font-mono text-teal-700 font-black text-sm">${avgProgress}%</span>
                             </div>
-                            <div class="w-full bg-slate-200/70 h-2 rounded-full overflow-hidden">
-                                <div class="bg-gradient-to-r from-teal-DEFAULT to-teal-light h-full rounded-full transition-all" style="width: ${avgProgress}%"></div>
+                            <div class="w-full bg-slate-100 h-2.5 rounded-full overflow-hidden">
+                                <div class="bg-gradient-to-r from-teal-DEFAULT to-teal-light h-full rounded-full transition-all duration-500" style="width: ${avgProgress}%"></div>
                             </div>
                         </div>
 
-                        <div class="flex items-center justify-between text-[11px] pt-1 border-t border-slate-200/50 text-slate-500">
-                            <span class="text-emerald-700 font-semibold flex items-center gap-1">
-                                <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
-                                ${completed} مكتمل
-                            </span>
-                            <span class="text-amber-700 font-semibold flex items-center gap-1">
-                                <span class="w-1.5 h-1.5 rounded-full bg-amber-500"></span>
-                                ${inProgress} قيد التدريب
-                            </span>
+                        <!-- 4 Skills Breakdown Grid -->
+                        <div class="p-3 rounded-xl bg-slate-50/80 border border-slate-100 space-y-2">
+                            <div class="text-[10px] font-bold text-slate-500 flex items-center justify-between">
+                                <span>متوسط المهارات اللغوية الـ 4:</span>
+                                <span class="text-teal-700 font-mono">B1-B2 CEFR</span>
+                            </div>
+                            <div class="grid grid-cols-2 gap-2 text-[10px]">
+                                <div class="flex items-center justify-between p-1.5 rounded-lg bg-white border border-slate-200/60">
+                                    <span class="text-slate-600 font-bold flex items-center gap-1">📖 القراءة</span>
+                                    <span class="font-mono font-bold text-blue-700">${avgReading}%</span>
+                                </div>
+                                <div class="flex items-center justify-between p-1.5 rounded-lg bg-white border border-slate-200/60">
+                                    <span class="text-slate-600 font-bold flex items-center gap-1">🎧 الاستماع</span>
+                                    <span class="font-mono font-bold text-indigo-700">${avgListening}%</span>
+                                </div>
+                                <div class="flex items-center justify-between p-1.5 rounded-lg bg-white border border-slate-200/60">
+                                    <span class="text-slate-600 font-bold flex items-center gap-1">✍️ الكتابة (AI)</span>
+                                    <span class="font-mono font-bold text-teal-700">${avgWriting}%</span>
+                                </div>
+                                <div class="flex items-center justify-between p-1.5 rounded-lg bg-white border border-slate-200/60">
+                                    <span class="text-slate-600 font-bold flex items-center gap-1">🎙️ التحدث</span>
+                                    <span class="font-mono font-bold text-purple-700">${avgSpeaking}%</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Status & Action Footer -->
+                        <div class="flex items-center justify-between pt-2 border-t border-slate-100 text-[11px]">
+                            <div class="flex items-center gap-2">
+                                <span class="text-emerald-700 font-bold flex items-center gap-1">
+                                    <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+                                    ${completed} مكتمل
+                                </span>
+                                <span class="text-amber-700 font-bold flex items-center gap-1">
+                                    <span class="w-2 h-2 rounded-full bg-amber-500"></span>
+                                    ${inProgress} قيد التدريب
+                                </span>
+                            </div>
+                            <button onclick="filterByCompany('${compName.replace(/'/g, "\\'")}')" class="text-teal-600 hover:text-teal-700 font-bold text-[11px] hover:underline flex items-center gap-0.5">
+                                <span>تصفية الموظفين</span>
+                                <i data-lucide="chevron-left" class="w-3.5 h-3.5"></i>
+                            </button>
                         </div>
                     </div>
                 `;
             }).join('');
+
+            if (window.lucide) lucide.createIcons();
         }
 
-        // Filter and Search Employees Live
+        window.filterByCompany = function(companyName) {
+            const compSelect = document.getElementById('lms-company-filter');
+            if (compSelect) {
+                compSelect.value = companyName;
+                filterLmsEmployees();
+                const tableSection = document.getElementById('lms-table-body');
+                if (tableSection) {
+                    tableSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }
+            }
+        };
+
+        // Filter and Search Employees Live (Search, Company, Level, Status)
         function filterLmsEmployees() {
             const searchInput = document.getElementById('lms-search-input');
             const search = searchInput ? searchInput.value.toLowerCase().trim() : '';
-            const deptFilter = document.getElementById('lms-dept-filter');
-            const dept = deptFilter ? deptFilter.value : 'ALL';
+            const companyFilter = document.getElementById('lms-company-filter');
+            const comp = companyFilter ? companyFilter.value : 'ALL';
+            const levelFilter = document.getElementById('lms-level-filter');
+            const level = levelFilter ? levelFilter.value : 'ALL';
             const statusFilter = document.getElementById('lms-status-filter');
             const status = statusFilter ? statusFilter.value : 'ALL';
 
@@ -4457,21 +4635,23 @@ Return ONLY a valid JSON object matching this exact schema:
                 const matchesSearch = !search ||
                     (emp.name && emp.name.toLowerCase().includes(search)) ||
                     (emp.id && emp.id.toLowerCase().includes(search)) ||
+                    (emp.company && emp.company.toLowerCase().includes(search)) ||
                     (emp.username && emp.username.toLowerCase().includes(search)) ||
                     (emp.email && emp.email.toLowerCase().includes(search));
 
-                const matchesDept = (dept === 'ALL' || dept === 'all') || emp.dept === dept;
+                const matchesCompany = (comp === 'ALL' || comp === 'all') || emp.company === comp;
+                const matchesLevel = (level === 'ALL' || level === 'all') || (emp.proficiencyLevel && emp.proficiencyLevel.toLowerCase().includes(level.toLowerCase()));
 
                 let matchesStatus = true;
                 if (status === 'COMPLETED' || status === 'مكتمل') {
                     matchesStatus = emp.completedCount === 11;
-                } else if (status === 'IN_PROGRESS' || status === 'قيد الإنجاز') {
+                } else if (status === 'IN_PROGRESS' || status === 'قيد التدريب' || status === 'قيد الإنجاز') {
                     matchesStatus = emp.completedCount > 0 && emp.completedCount < 11;
                 } else if (status === 'NOT_STARTED' || status === 'لم يبدأ') {
                     matchesStatus = emp.completedCount === 0;
                 }
 
-                return matchesSearch && matchesDept && matchesStatus;
+                return matchesSearch && matchesCompany && matchesLevel && matchesStatus;
             });
 
             lmsCurrentPage = 1;
@@ -4481,15 +4661,51 @@ Return ONLY a valid JSON object matching this exact schema:
 
         function resetLmsFilters() {
             const searchInput = document.getElementById('lms-search-input');
-            const deptFilter = document.getElementById('lms-dept-filter');
+            const companyFilter = document.getElementById('lms-company-filter');
+            const levelFilter = document.getElementById('lms-level-filter');
             const statusFilter = document.getElementById('lms-status-filter');
             if (searchInput) searchInput.value = '';
-            if (deptFilter) deptFilter.value = 'ALL';
+            if (companyFilter) companyFilter.value = 'ALL';
+            if (levelFilter) levelFilter.value = 'ALL';
             if (statusFilter) statusFilter.value = 'ALL';
             filterLmsEmployees();
         }
 
-        // Render current page of LMS employees table
+        // Real-time update of employee's proficiency level by admin (Saves to Supabase & cache)
+        window.updateEmployeeProficiency = async function(empId, newLevel) {
+            if (!empId || !newLevel) return;
+            const emp = LMS_EMPLOYEES_CACHE.find(e => e.id === empId);
+            if (emp) {
+                emp.proficiencyLevel = newLevel;
+            }
+
+            const accounts = getAccountsDb();
+            const acc = accounts.find(a => a.id === empId);
+            if (acc) {
+                acc.proficiency_level = newLevel;
+                acc.proficiencyLevel = newLevel;
+                saveAccountsDb(accounts);
+            }
+
+            if (supabaseClient) {
+                try {
+                    const { error } = await supabaseClient
+                        .from("ysl_accounts")
+                        .update({ proficiency_level: newLevel })
+                        .eq("id", empId);
+                    if (error) {
+                        console.warn("Supabase proficiency update notice:", error.message);
+                    }
+                } catch (e) {
+                    console.warn("Supabase proficiency update error:", e);
+                }
+            }
+
+            showLmsToast(`تم تحديث المستوى الفعلي للموظف (${emp ? emp.name : empId}) إلى: ${newLevel}`);
+            renderLmsTable();
+        };
+
+        // Render current page of LMS employees table with 9 comprehensive columns
         function renderLmsTable() {
             const tbody = document.getElementById('lms-table-body') || document.getElementById('lms-employees-table-body');
             if (!tbody) return;
@@ -4506,14 +4722,14 @@ Return ONLY a valid JSON object matching this exact schema:
                 if (LMS_EMPLOYEES_CACHE.length === 0) {
                     tbody.innerHTML = `
                         <tr>
-                            <td colspan="8" class="py-16 text-center">
+                            <td colspan="9" class="py-16 text-center">
                                 <div class="max-w-md mx-auto space-y-3">
                                     <div class="w-14 h-14 mx-auto rounded-2xl bg-amber-50 border border-amber-200/60 flex items-center justify-center text-amber-600 shadow-sm">
                                         <i data-lucide="users" class="w-7 h-7"></i>
                                     </div>
                                     <h4 class="text-sm font-bold text-navy">لا يوجد موظفون مسجلون حالياً في المنصة</h4>
                                     <p class="text-xs text-slate-500 leading-relaxed">
-                                        قائمة المتعلمين فارغة تماماً ولا تحتوي على أي بيانات تجريبية. بصفتك مشرف المنصة، يمكنك إضافة الموظفين الفعليين ومنحهم بيانات الدخول بالضغط على الزر أدناه.
+                                        قائمة المتعلمين فارغة تماماً ولا تحتوي على أي بيانات تجريبية. بصفتك مشرف المنصة، يمكنك إضافة الموظفين الفعليين وتعيين شركاتهم ومستوياتهم عبر الأزرار أعلاه.
                                     </p>
                                     <div class="pt-2">
                                         <button onclick="openAddUserModal()" class="px-5 py-2.5 bg-teal-DEFAULT hover:bg-teal-light text-white text-xs font-bold rounded-xl transition inline-flex items-center gap-2 shadow-sm">
@@ -4528,9 +4744,9 @@ Return ONLY a valid JSON object matching this exact schema:
                 } else {
                     tbody.innerHTML = `
                         <tr>
-                            <td colspan="8" class="py-12 text-center text-slate-400 text-xs">
+                            <td colspan="9" class="py-12 text-center text-slate-400 text-xs">
                                 <i data-lucide="search-x" class="w-8 h-8 mx-auto mb-2 text-slate-300"></i>
-                                لم يتم العثور على أي موظف مطابق للبحث أو التصفية الحالية.
+                                لم يتم العثور على أي موظف مطابق للبحث أو الشركة أو التصفية الحالية.
                             </td>
                         </tr>
                     `;
@@ -4545,16 +4761,17 @@ Return ONLY a valid JSON object matching this exact schema:
 
             tbody.innerHTML = pageItems.map(emp => {
                 const statusBadge = emp.status === 'مكتمل'
-                    ? '<span class="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-200">✓ مكتمل</span>'
-                    : emp.status === 'قيد الإنجاز'
-                    ? '<span class="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-amber-100 text-amber-800 border border-amber-200">⏳ قيد الإنجاز</span>'
-                    : '<span class="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-slate-100 text-slate-600 border border-slate-200">لم يبدأ</span>';
+                    ? '<span class="px-2.5 py-1 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-200 inline-flex items-center gap-1"><span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>✓ مكتمل</span>'
+                    : emp.status === 'قيد التدريب' || emp.status === 'قيد الإنجاز'
+                    ? '<span class="px-2.5 py-1 rounded-full text-[10px] font-bold bg-amber-100 text-amber-800 border border-amber-200 inline-flex items-center gap-1"><span class="w-1.5 h-1.5 rounded-full bg-amber-500"></span>⏳ قيد التدريب</span>'
+                    : '<span class="px-2.5 py-1 rounded-full text-[10px] font-bold bg-slate-100 text-slate-600 border border-slate-200 inline-flex items-center gap-1"><span class="w-1.5 h-1.5 rounded-full bg-slate-400"></span>لم يبدأ</span>';
 
                 const isCurrent = currentUser && emp.id === currentUser.id;
+                const skills = emp.skills || calculateEmployeeSkills(emp.completedCount, emp);
 
                 return `
-                    <tr class="hover:bg-slate-50/80 transition border-b border-slate-100 ${isCurrent ? 'bg-teal-50/40' : ''}">
-                        <!-- Employee Info -->
+                    <tr class="hover:bg-slate-50/80 transition border-b border-slate-100 ${isCurrent ? 'bg-teal-50/30' : ''}">
+                        <!-- 1. Employee Info -->
                         <td class="p-3.5">
                             <div class="flex items-center gap-3">
                                 <div class="w-9 h-9 rounded-xl ${isCurrent ? 'bg-teal-DEFAULT text-white' : 'bg-navy/10 text-navy'} flex items-center justify-center font-bold text-xs flex-shrink-0 shadow-sm">
@@ -4564,31 +4781,48 @@ Return ONLY a valid JSON object matching this exact schema:
                                     <div class="font-extrabold text-navy text-xs sm:text-sm flex items-center gap-1.5">
                                         <span>${emp.name}</span>
                                         ${isCurrent ? '<span class="text-[10px] bg-teal-DEFAULT text-white px-1.5 py-0.5 rounded font-bold">أنت</span>' : ''}
-                                        ${emp.role === 'admin' ? '<span class="text-[10px] bg-purple-100 text-purple-700 px-1.5 py-0.5 rounded font-bold">مشرف</span>' : ''}
                                     </div>
                                     <div class="text-[11px] text-slate-400 font-mono">@${emp.username || emp.id} • ${emp.email}</div>
                                 </div>
                             </div>
                         </td>
 
-                        <!-- ID -->
-                        <td class="p-3.5 font-mono font-bold text-slate-600 text-xs">
-                            ${emp.id}
-                        </td>
-
-                        <!-- Department -->
+                        <!-- 2. Company Name -->
                         <td class="p-3.5">
-                            <span class="text-xs font-semibold text-slate-700 bg-slate-100 px-2.5 py-1 rounded-lg border border-slate-200/60">
-                                ${emp.dept}
+                            <span class="inline-flex items-center gap-1.5 text-xs font-bold text-slate-700 bg-slate-100 px-2.5 py-1 rounded-lg border border-slate-200/60 shadow-xs">
+                                <i data-lucide="building" class="w-3.5 h-3.5 text-teal-600"></i>
+                                <span>${emp.company || 'الشركة العامة'}</span>
                             </span>
                         </td>
 
-                        <!-- Progress Bar & Count -->
-                        <td class="p-3.5 min-w-[150px]">
+                        <!-- 3. Employee Code / ID -->
+                        <td class="p-3.5 font-mono font-bold text-slate-700 text-xs">
+                            <span class="bg-slate-50 px-2 py-0.5 rounded border border-slate-200/80">${emp.id}</span>
+                        </td>
+
+                        <!-- 4. Platform Join Date -->
+                        <td class="p-3.5 text-slate-500 font-mono text-[11px] whitespace-nowrap">
+                            <div class="flex items-center gap-1">
+                                <i data-lucide="calendar" class="w-3.5 h-3.5 text-slate-400"></i>
+                                <span>${emp.joinDate || '2026/01/15'}</span>
+                            </div>
+                        </td>
+
+                        <!-- 5. Actual Proficiency Level (Editable by Admin) -->
+                        <td class="p-3.5">
+                            <select onchange="updateEmployeeProficiency('${emp.id}', this.value)" class="text-[11px] font-bold px-2 py-1 rounded-lg border border-slate-300 bg-white hover:border-teal-DEFAULT focus:ring-2 focus:ring-teal-DEFAULT outline-none shadow-xs text-navy">
+                                <option value="Beginner" ${emp.proficiencyLevel.includes('Beginner') || emp.proficiencyLevel.includes('مبتدئ') ? 'selected' : ''}>Beginner (مبتدئ A1-A2)</option>
+                                <option value="Intermediate" ${emp.proficiencyLevel.includes('Intermediate') || emp.proficiencyLevel.includes('متوسط') ? 'selected' : ''}>Intermediate (متوسط B1-B2)</option>
+                                <option value="Advanced" ${emp.proficiencyLevel.includes('Advanced') || emp.proficiencyLevel.includes('متقدم') ? 'selected' : ''}>Advanced (متقدم C1-C2)</option>
+                            </select>
+                        </td>
+
+                        <!-- 6. Overall Level Progress -->
+                        <td class="p-3.5 min-w-[140px]">
                             <div class="space-y-1">
                                 <div class="flex items-center justify-between text-[11px] font-bold text-navy">
                                     <span>${emp.completedCount} / 11 درساً</span>
-                                    <span>${emp.progressPct}%</span>
+                                    <span class="font-mono">${emp.progressPct}%</span>
                                 </div>
                                 <div class="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
                                     <div class="${emp.progressPct === 100 ? 'bg-emerald-500' : 'bg-teal-DEFAULT'} h-full rounded-full transition-all" style="width: ${emp.progressPct}%"></div>
@@ -4596,26 +4830,34 @@ Return ONLY a valid JSON object matching this exact schema:
                             </div>
                         </td>
 
-                        <!-- Progress Pct -->
-                        <td class="p-3.5 text-center font-mono font-black text-xs ${emp.progressPct === 100 ? 'text-emerald-600' : 'text-navy'}">
-                            ${emp.progressPct}%
-                        </td>
-
-                        <!-- AI Score -->
-                        <td class="p-3.5 text-center">
-                            ${emp.aiWritingScore > 0 ? `
-                                <span class="font-mono text-xs font-black ${emp.aiWritingScore >= 80 ? 'text-emerald-700 bg-emerald-50 border-emerald-200' : 'text-amber-700 bg-amber-50 border-amber-200'} px-2 py-0.5 rounded-lg border">
-                                    ${emp.aiWritingScore} / 100
+                        <!-- 7. 4 Language Skills Tracking -->
+                        <td class="p-3.5 min-w-[200px]">
+                            <div class="grid grid-cols-2 gap-1.5 text-[10px]">
+                                <span class="px-2 py-0.5 rounded-md bg-blue-50 text-blue-700 border border-blue-200/80 font-bold flex items-center justify-between" title="Reading: القراءة">
+                                    <span>📖 R</span>
+                                    <span class="font-mono">${skills.reading}%</span>
                                 </span>
-                            ` : '<span class="text-slate-300 text-xs">—</span>'}
+                                <span class="px-2 py-0.5 rounded-md bg-indigo-50 text-indigo-700 border border-indigo-200/80 font-bold flex items-center justify-between" title="Listening: الاستماع">
+                                    <span>🎧 L</span>
+                                    <span class="font-mono">${skills.listening}%</span>
+                                </span>
+                                <span class="px-2 py-0.5 rounded-md bg-teal-50 text-teal-800 border border-teal-200/80 font-bold flex items-center justify-between" title="Writing: الكتابة (تقييم AI)">
+                                    <span>✍️ W</span>
+                                    <span class="font-mono">${skills.writing > 0 ? skills.writing + '%' : '—'}</span>
+                                </span>
+                                <span class="px-2 py-0.5 rounded-md bg-purple-50 text-purple-700 border border-purple-200/80 font-bold flex items-center justify-between" title="Speaking: المحادثة والنطق">
+                                    <span>🎙️ S</span>
+                                    <span class="font-mono">${skills.speaking}%</span>
+                                </span>
+                            </div>
                         </td>
 
-                        <!-- Status Badge -->
+                        <!-- 8. Status Badge -->
                         <td class="p-3.5 text-center">
                             ${statusBadge}
                         </td>
 
-                        <!-- Actions -->
+                        <!-- 9. Actions -->
                         <td class="p-3.5 text-center">
                             <div class="flex items-center gap-1.5 justify-center">
                                 <button onclick="viewEmployeeDetails('${emp.id}')" class="px-2.5 py-1 rounded-xl bg-slate-100 hover:bg-slate-200 text-navy text-[11px] font-bold transition flex items-center gap-1" title="عرض السجل التدريبي">
@@ -4635,6 +4877,9 @@ Return ONLY a valid JSON object matching this exact schema:
                                         <i data-lucide="plus-circle" class="w-4 h-4"></i>
                                     </button>
                                 `}
+                                <button onclick="confirmDeleteEmployee('${emp.id}')" class="p-1 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-600 transition" title="حذف الموظف">
+                                    <i data-lucide="trash-2" class="w-4 h-4"></i>
+                                </button>
                             </div>
                         </td>
                     </tr>
@@ -4731,48 +4976,62 @@ Return ONLY a valid JSON object matching this exact schema:
                 return;
             }
 
-            // Exactly matching the requested 7 corporate LMS columns:
-            // (اسم الموظف، الرقم الوظيفي، الإدارة / القسم، الدروس المنجزة، نسبة الإنجاز، معدل AI، الحالة)
+            // Exactly matching the requested corporate LMS columns:
             const headers = [
                 "اسم الموظف",
-                "الرقم الوظيفي",
+                "الكود الوظيفي",
+                "الشركة",
                 "الإدارة / القسم",
+                "تاريخ الانضمام",
+                "المستوى الفعلي",
+                "التقدم الإجمالي",
+                "مهارة القراءة (Reading)",
+                "مهارة الاستماع (Listening)",
+                "مهارة الكتابة (Writing - AI)",
+                "مهارة التحدث (Speaking)",
                 "الدروس المنجزة",
-                "نسبة الإنجاز",
-                "معدل AI",
-                "الحالة"
+                "الحالة التدريبية"
             ];
 
-            const rows = learners.map(e => [
-                `"${(e.name || '').replace(/"/g, '""')}"`,
-                `"${(e.id || '').replace(/"/g, '""')}"`,
-                `"${(e.dept || '').replace(/"/g, '""')}"`,
-                `"${e.completedCount} من 11"`,
-                `"${e.progressPct}%"`,
-                `"${e.aiWritingScore || 0}%"`,
-                `"${e.status || 'لم يبدأ'}"`
-            ]);
+            const rows = learners.map(e => {
+                const skills = e.skills || calculateEmployeeSkills(e.completedCount, e);
+                return [
+                    `"${(e.name || '').replace(/"/g, '""')}"`,
+                    `"${(e.id || '').replace(/"/g, '""')}"`,
+                    `"${(e.company || '').replace(/"/g, '""')}"`,
+                    `"${(e.dept || '').replace(/"/g, '""')}"`,
+                    `"${(e.joinDate || '').replace(/"/g, '""')}"`,
+                    `"${(e.proficiencyLevel || '').replace(/"/g, '""')}"`,
+                    `"${e.progressPct}%"`,
+                    `"${skills.reading}%"`,
+                    `"${skills.listening}%"`,
+                    `"${skills.writing}%"`,
+                    `"${skills.speaking}%"`,
+                    `"${e.completedCount} من 11"`,
+                    `"${e.status || 'لم يبدأ'}"`
+                ];
+            });
 
             const csvContent = "\uFEFF" + [headers.join(","), ...rows.map(r => r.join(","))].join("\r\n");
             const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
             const url = URL.createObjectURL(blob);
             const a = document.createElement("a");
             a.href = url;
-            a.download = `تقرير_تدريب_الموظفين_${new Date().toISOString().slice(0, 10)}.csv`;
+            a.download = `تقرير_تدريب_الموظفين_والشركات_${new Date().toISOString().slice(0, 10)}.csv`;
             document.body.appendChild(a);
             a.click();
             document.body.removeChild(a);
             URL.revokeObjectURL(url);
         }
 
-        // View individual employee details modal
+        // View individual employee details modal with full 4-Skills Radar breakdown
         function viewEmployeeDetails(empId) {
             const emp = LMS_EMPLOYEES_CACHE.find(e => e.id === empId) || currentUser;
             selectedDossierEmp = emp;
 
             document.getElementById('dossier-avatar').innerText = emp.avatar;
             document.getElementById('dossier-name').innerText = emp.name;
-            document.getElementById('dossier-meta').innerText = `الرقم: ${emp.id} • ${emp.dept} • ${emp.email}`;
+            document.getElementById('dossier-meta').innerText = `الكود: ${emp.id} • الشركة: ${emp.company || 'العامة'} • انضمام: ${emp.joinDate || '2026/01/15'} • المستوى: ${emp.proficiencyLevel || 'Intermediate'}`;
 
             const certBtn = document.getElementById('dossier-cert-btn');
             if (emp.completedCount === 11) {
@@ -4781,24 +5040,104 @@ Return ONLY a valid JSON object matching this exact schema:
                 certBtn.classList.add('hidden');
             }
 
+            const skills = emp.skills || calculateEmployeeSkills(emp.completedCount, emp);
+
             const content = document.getElementById('dossier-content');
             content.innerHTML = `
                 <!-- Summary KPI Row -->
-                <div class="grid grid-cols-3 gap-3 text-center">
+                <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 text-center">
                     <div class="p-3 rounded-2xl bg-slate-50 border border-slate-200">
-                        <span class="text-[10px] text-slate-500 block">نسبة الإنجاز</span>
+                        <span class="text-[10px] text-slate-500 block">إجمالي الإنجاز</span>
                         <span class="text-lg font-black text-navy">${emp.progressPct}%</span>
                         <span class="text-[10px] text-slate-400 block">${emp.completedCount} من 11 درساً</span>
                     </div>
                     <div class="p-3 rounded-2xl bg-teal-50 border border-teal-200">
-                        <span class="text-[10px] text-teal-700 block">تقييم الذكاء الاصطناعي</span>
-                        <span class="text-lg font-black text-teal-800">${emp.aiWritingScore > 0 ? emp.aiWritingScore + '/100' : '—'}</span>
-                        <span class="text-[10px] text-teal-600 block">Gemini 6-Rubric</span>
+                        <span class="text-[10px] text-teal-700 block">تقييم كتابة AI</span>
+                        <span class="text-lg font-black text-teal-800">${skills.writing > 0 ? skills.writing + '/100' : '—'}</span>
+                        <span class="text-[10px] text-teal-600 block">معايير Gemini الستة</span>
+                    </div>
+                    <div class="p-3 rounded-2xl bg-indigo-50 border border-indigo-200">
+                        <span class="text-[10px] text-indigo-700 block">المستوى الفعلي</span>
+                        <span class="text-xs font-black text-indigo-900 block mt-1">${emp.proficiencyLevel}</span>
+                        <span class="text-[10px] text-indigo-600 block">معتمد من الإدارة</span>
                     </div>
                     <div class="p-3 rounded-2xl bg-purple-50 border border-purple-200">
                         <span class="text-[10px] text-purple-700 block">المحادثات الصوتية</span>
                         <span class="text-lg font-black text-purple-800">${emp.speakingPractices}</span>
                         <span class="text-[10px] text-purple-600 block">جلسة صوتية</span>
+                    </div>
+                </div>
+
+                <!-- 4 Language Skills Radar Breakdown -->
+                <div class="p-4 rounded-2xl bg-gradient-to-br from-slate-50 to-teal-50/30 border border-slate-200/80 space-y-3">
+                    <div class="flex items-center justify-between">
+                        <h4 class="text-xs font-extrabold text-navy flex items-center gap-1.5">
+                            <i data-lucide="sparkles" class="w-4 h-4 text-teal-600"></i>
+                            <span>تتبع مهارات اللغة الإنجليزية الأربع (4 Skills Mastery):</span>
+                        </h4>
+                        <span class="text-[10px] bg-teal-100 text-teal-800 px-2 py-0.5 rounded-full font-bold font-mono">B1-B2 Intermediate</span>
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                        <!-- Reading -->
+                        <div class="p-3 rounded-xl bg-white border border-slate-200 space-y-1.5">
+                            <div class="flex items-center justify-between font-bold">
+                                <span class="flex items-center gap-1.5 text-blue-800">
+                                    <i data-lucide="book-open" class="w-4 h-4 text-blue-600"></i>
+                                    <span>Reading (القراءة والفهم)</span>
+                                </span>
+                                <span class="font-mono text-blue-700 font-black">${skills.reading}%</span>
+                            </div>
+                            <div class="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
+                                <div class="bg-blue-600 h-full rounded-full transition-all" style="width: ${skills.reading}%"></div>
+                            </div>
+                            <span class="text-[10px] text-slate-400 block">استيعاب نصوص الدروس والمفردات المهنية</span>
+                        </div>
+
+                        <!-- Listening -->
+                        <div class="p-3 rounded-xl bg-white border border-slate-200 space-y-1.5">
+                            <div class="flex items-center justify-between font-bold">
+                                <span class="flex items-center gap-1.5 text-indigo-800">
+                                    <i data-lucide="headphones" class="w-4 h-4 text-indigo-600"></i>
+                                    <span>Listening (الاستماع والحوارات)</span>
+                                </span>
+                                <span class="font-mono text-indigo-700 font-black">${skills.listening}%</span>
+                            </div>
+                            <div class="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
+                                <div class="bg-indigo-600 h-full rounded-full transition-all" style="width: ${skills.listening}%"></div>
+                            </div>
+                            <span class="text-[10px] text-slate-400 block">فهم المحادثات الصوتية والنطق الصحيح</span>
+                        </div>
+
+                        <!-- Writing -->
+                        <div class="p-3 rounded-xl bg-white border border-slate-200 space-y-1.5">
+                            <div class="flex items-center justify-between font-bold">
+                                <span class="flex items-center gap-1.5 text-teal-800">
+                                    <i data-lucide="edit-3" class="w-4 h-4 text-teal-600"></i>
+                                    <span>Writing (الكتابة وورشة AI)</span>
+                                </span>
+                                <span class="font-mono text-teal-700 font-black">${skills.writing > 0 ? skills.writing + '%' : 'لم يقدم'}</span>
+                            </div>
+                            <div class="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
+                                <div class="bg-teal-DEFAULT h-full rounded-full transition-all" style="width: ${skills.writing}%"></div>
+                            </div>
+                            <span class="text-[10px] text-slate-400 block">تقييم الذكاء الاصطناعي لمقالات العمل والطلبات</span>
+                        </div>
+
+                        <!-- Speaking -->
+                        <div class="p-3 rounded-xl bg-white border border-slate-200 space-y-1.5">
+                            <div class="flex items-center justify-between font-bold">
+                                <span class="flex items-center gap-1.5 text-purple-800">
+                                    <i data-lucide="mic" class="w-4 h-4 text-purple-600"></i>
+                                    <span>Speaking (المحادثة والتحدث)</span>
+                                </span>
+                                <span class="font-mono text-purple-700 font-black">${skills.speaking}%</span>
+                            </div>
+                            <div class="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
+                                <div class="bg-purple-600 h-full rounded-full transition-all" style="width: ${skills.speaking}%"></div>
+                            </div>
+                            <span class="text-[10px] text-slate-400 block">جلسات التحدث الصوتي وتدريب النطق</span>
+                        </div>
                     </div>
                 </div>
 
@@ -4808,7 +5147,7 @@ Return ONLY a valid JSON object matching this exact schema:
                         <span>سجل إتمام الدروس الـ 11:</span>
                         <span class="text-slate-400 font-normal">حالة كل درس معتمدة تلقائياً</span>
                     </h4>
-                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-60 overflow-y-auto custom-scrollbar p-1">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-56 overflow-y-auto custom-scrollbar p-1">
                         ${LESSONS_DATA.map(l => {
                             const isDone = emp.completedLessons.includes(l.number);
                             return `
@@ -6349,7 +6688,9 @@ Return ONLY a valid JSON object matching this exact schema:
                     password: "315881",
                     name: "Haitham Alaghbari",
                     email: "admin@company.sa",
+                    company: "الإدارة العامة",
                     dept: "الإدارة العامة",
+                    proficiency_level: "Advanced (C1)",
                     role: "admin",
                     avatar: "HA"
                 };
@@ -6369,6 +6710,8 @@ Return ONLY a valid JSON object matching this exact schema:
                                 password: "315881",
                                 name: "Haitham Alaghbari",
                                 email: "admin@company.sa",
+                                company: "الإدارة العامة",
+                                proficiency_level: "Advanced (C1)",
                                 role: "admin",
                                 avatar: "HA"
                             })
@@ -6547,19 +6890,19 @@ Return ONLY a valid JSON object matching this exact schema:
         // 1. Download Sample CSV Template
         function downloadSampleCsv() {
             const csvRows = [
-                "الرقم الوظيفي,الاسم,اسم المستخدم,كلمة المرور,البريد,القسم",
-                "1001,خالد بن فهد الشمري,khalid.shammari,Pass@1001,khalid@company.sa,خدمة العملاء",
-                "1002,سارة بنت فهد العتيبي,sara.otaibi,Pass@1002,sara@company.sa,الموارد البشرية",
-                "1003,عبدالله بن سعد القحطاني,abdullah.q,Pass@1003,abdullah@company.sa,تقنية المعلومات",
-                "1004,نورة بنت محمد الدوسري,noura.d,Pass@1004,noura@company.sa,المبيعات والتسويق",
-                "1005,فيصل بن تركي الحربي,faisal.h,Pass@1005,faisal@company.sa,العمليات واللوجستيات"
+                "الرقم الوظيفي,الاسم,الشركة,اسم المستخدم,كلمة المرور,البريد,القسم,المستوى",
+                "1001,خالد بن فهد الشمري,أرامكو السعودية,khalid.shammari,Pass@1001,khalid@company.sa,خدمة العملاء,Intermediate",
+                "1002,سارة بنت فهد العتيبي,شركة سابك,sara.otaibi,Pass@1002,sara@company.sa,الموارد البشرية,Advanced",
+                "1003,عبدالله بن سعد القحطاني,الاتصالات السعودية STC,abdullah.q,Pass@1003,abdullah@company.sa,تقنية المعلومات,Intermediate",
+                "1004,نورة بنت محمد الدوسري,مصرف الراجحي,noura.d,Pass@1004,noura@company.sa,المبيعات والتسويق,Beginner",
+                "1005,فيصل بن تركي الحربي,شركة نيوم,faisal.h,Pass@1005,faisal@company.sa,العمليات واللوجستيات,Intermediate"
             ];
             const content = "\uFEFF" + csvRows.join("\n");
             const blob = new Blob([content], { type: "text/csv;charset=utf-8;" });
             const url = URL.createObjectURL(blob);
             const a = document.createElement("a");
             a.href = url;
-            a.download = "نموذج_إضافة_الموظفين_الجماعي.csv";
+            a.download = "نموذج_إضافة_الموظفين_والشركات_الجماعي.csv";
             document.body.appendChild(a);
             a.click();
             document.body.removeChild(a);
@@ -6677,18 +7020,43 @@ Return ONLY a valid JSON object matching this exact schema:
                 if (parts.length >= 2) {
                     const empId = parts[0] ? parts[0].trim() : "";
                     const name = parts[1] ? parts[1].trim() : "";
-                    const username = parts[2] ? parts[2].trim().toLowerCase() : (empId ? "user_" + empId : "");
-                    const password = parts[3] ? parts[3].trim() : "pass1234";
-                    const email = parts[4] ? parts[4].trim() : `${username}@company.sa`;
-                    const dept = parts[5] ? parts[5].trim() : "العامة";
+                    let company = "الشركة العامة";
+                    let username = "";
+                    let password = "pass" + empId;
+                    let email = "";
+                    let dept = "العامة";
+                    let level = "Intermediate (متوسط B1-B2)";
+
+                    if (parts.length >= 8) {
+                        company = parts[2] ? parts[2].trim() : "الشركة العامة";
+                        username = parts[3] ? parts[3].trim().toLowerCase() : (empId ? "user_" + empId : "");
+                        password = parts[4] ? parts[4].trim() : "Pass@" + empId;
+                        email = parts[5] ? parts[5].trim() : `${username}@company.sa`;
+                        dept = parts[6] ? parts[6].trim() : "العامة";
+                        level = parts[7] ? parts[7].trim() : "Intermediate (متوسط B1-B2)";
+                    } else if (parts.length === 7) {
+                        company = parts[2] ? parts[2].trim() : "الشركة العامة";
+                        username = parts[3] ? parts[3].trim().toLowerCase() : (empId ? "user_" + empId : "");
+                        password = parts[4] ? parts[4].trim() : "Pass@" + empId;
+                        email = parts[5] ? parts[5].trim() : `${username}@company.sa`;
+                        dept = parts[6] ? parts[6].trim() : "العامة";
+                    } else {
+                        username = parts[2] ? parts[2].trim().toLowerCase() : (empId ? "user_" + empId : "");
+                        password = parts[3] ? parts[3].trim() : "Pass@" + empId;
+                        email = parts[4] ? parts[4].trim() : `${username}@company.sa`;
+                        dept = parts[5] ? parts[5].trim() : "العامة";
+                        company = dept || "الشركة العامة";
+                    }
 
                     results.push({
                         id: empId,
                         name: name,
+                        company: company,
                         username: username,
                         password: password,
                         email: email,
                         dept: dept,
+                        proficiency_level: level,
                         role: "learner"
                     });
                 }
@@ -6705,7 +7073,7 @@ Return ONLY a valid JSON object matching this exact schema:
 
             const parsed = parseBulkRawText(rawText);
             if (parsed.length === 0) {
-                alert("لم يتم العثور على أسطر صالحة. تأكد من تنسيق البيانات:\nالرقم الوظيفي, الاسم, اسم المستخدم, كلمة المرور, البريد, القسم");
+                alert("لم يتم العثور على أسطر صالحة. تأكد من تنسيق البيانات:\nالرقم الوظيفي, الاسم, الشركة, اسم المستخدم, كلمة المرور, البريد, القسم, المستوى");
                 return;
             }
 
@@ -6772,8 +7140,10 @@ Return ONLY a valid JSON object matching this exact schema:
                         username: row.username,
                         password: row.password,
                         name: row.name,
+                        company: row.company || "الشركة العامة",
+                        dept: row.dept || "العامة",
+                        proficiency_level: row.proficiency_level || "Intermediate (متوسط B1-B2)",
                         email: row.email,
-                        dept: row.dept,
                         role: "learner",
                         avatar: initials || "مو",
                         created_at: new Date().toISOString()
@@ -6815,9 +7185,9 @@ Return ONLY a valid JSON object matching this exact schema:
                         <td class="p-2 text-slate-400 font-mono">${i + 1}</td>
                         <td class="p-2 font-mono font-bold text-teal-700">${r.id}</td>
                         <td class="p-2 font-bold text-navy">${r.name}</td>
+                        <td class="p-2 font-bold text-slate-700">${r.company}</td>
                         <td class="p-2 font-mono text-slate-600">${r.username}</td>
-                        <td class="p-2 font-mono text-slate-500">${r.password}</td>
-                        <td class="p-2 text-slate-600">${r.dept}</td>
+                        <td class="p-2 text-slate-600 font-semibold">${r.proficiency_level}</td>
                         <td class="p-2">
                             <span class="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
                                 ✓ جاهز
@@ -6875,8 +7245,18 @@ Return ONLY a valid JSON object matching this exact schema:
             for (let i = 0; i < total; i += BATCH_SIZE) {
                 const batch = bulkParsedValidAccounts.slice(i, i + BATCH_SIZE);
                 try {
-                    // 1. Insert accounts batch
-                    const { error: accErr } = await supabaseClient.from("ysl_accounts").insert(batch);
+                    // 1. Insert accounts batch with defensive schema fallback
+                    let { error: accErr } = await supabaseClient.from("ysl_accounts").insert(batch);
+                    if (accErr && (accErr.message.includes("company") || accErr.message.includes("proficiency_level"))) {
+                        const fallbackBatch = batch.map(b => {
+                            const copy = { ...b };
+                            delete copy.company;
+                            delete copy.proficiency_level;
+                            return copy;
+                        });
+                        const { error: fbErr } = await supabaseClient.from("ysl_accounts").insert(fallbackBatch);
+                        accErr = fbErr;
+                    }
                     if (accErr) {
                         console.error("Batch insert error:", accErr);
                         alert(`حدث خطأ أثناء حفظ الدفعة (${i + 1} - ${i + batch.length}): ` + accErr.message);
@@ -6891,7 +7271,11 @@ Return ONLY a valid JSON object matching this exact schema:
                         speaking_practices: 0,
                         last_active: "تم الإنشاء حديثاً"
                     }));
-                    await supabaseClient.from("ysl_progress").insert(progressBatch);
+                    try {
+                        await supabaseClient.from("ysl_progress").insert(progressBatch);
+                    } catch (pe) {
+                        console.warn("Progress batch insert warning:", pe);
+                    }
 
                     insertedCount += batch.length;
                     const pct = Math.round((insertedCount / total) * 100);
@@ -6922,6 +7306,8 @@ Return ONLY a valid JSON object matching this exact schema:
             const empIdInput = document.getElementById("new-user-empid");
             const empId = empIdInput ? empIdInput.value.trim() : "";
             const name = (document.getElementById("new-user-fullname")?.value || "").trim();
+            const company = (document.getElementById("new-user-company")?.value || "").trim() || "الشركة العامة";
+            const level = document.getElementById("new-user-level")?.value || "Intermediate (متوسط B1-B2)";
             const dept = document.getElementById("new-user-dept")?.value || "العامة";
             const email = (document.getElementById("new-user-email")?.value || "").trim();
             const username = (document.getElementById("new-user-username")?.value || "").trim().toLowerCase();
@@ -6989,26 +7375,40 @@ Return ONLY a valid JSON object matching this exact schema:
                 password: password,
                 name: name,
                 email: email,
+                company: company,
                 dept: dept,
+                proficiency_level: level,
                 role: role,
                 avatar: initials || "مو",
                 created_at: new Date().toISOString()
             };
 
             if (supabaseClient) {
-                const { error: insErr } = await supabaseClient.from("ysl_accounts").insert([newAccount]);
+                let { error: insErr } = await supabaseClient.from("ysl_accounts").insert([newAccount]);
+                if (insErr && (insErr.message.includes("company") || insErr.message.includes("proficiency_level"))) {
+                    // Fallback without new columns if schema wasn't migrated
+                    const fallbackAcc = { ...newAccount };
+                    delete fallbackAcc.company;
+                    delete fallbackAcc.proficiency_level;
+                    const { error: fbErr } = await supabaseClient.from("ysl_accounts").insert([fallbackAcc]);
+                    insErr = fbErr;
+                }
                 if (insErr) {
                     alert("حدث خطأ أثناء حفظ الموظف في Supabase: " + insErr.message);
                     return;
                 }
                 // Initialize progress row in ysl_progress
-                await supabaseClient.from("ysl_progress").insert([{
-                    user_id: empId,
-                    completed_lessons: [],
-                    ai_writing_score: 0,
-                    speaking_practices: 0,
-                    last_active: "تم الإنشاء حديثاً"
-                }]);
+                try {
+                    await supabaseClient.from("ysl_progress").insert([{
+                        user_id: empId,
+                        completed_lessons: [],
+                        ai_writing_score: 0,
+                        speaking_practices: 0,
+                        last_active: "تم الإنشاء حديثاً"
+                    }]);
+                } catch (pe) {
+                    console.warn("Progress init notice:", pe);
+                }
 
                 // Reload table strictly from Supabase
                 await loadEmployeesFromSupabase();
@@ -7019,13 +7419,14 @@ Return ONLY a valid JSON object matching this exact schema:
 
             // Clear inputs
             if (empIdInput) empIdInput.value = "";
-            document.getElementById("new-user-fullname").value = "";
-            document.getElementById("new-user-email").value = "";
-            document.getElementById("new-user-username").value = "";
-            document.getElementById("new-user-password").value = "";
+            if (document.getElementById("new-user-fullname")) document.getElementById("new-user-fullname").value = "";
+            if (document.getElementById("new-user-email")) document.getElementById("new-user-email").value = "";
+            if (document.getElementById("new-user-username")) document.getElementById("new-user-username").value = "";
+            if (document.getElementById("new-user-password")) document.getElementById("new-user-password").value = "";
+            if (document.getElementById("new-user-company")) document.getElementById("new-user-company").value = "";
             closeAddUserModal();
             confetti({ particleCount: 60, spread: 70 });
-            alert(`✓ تم إنشاء وحفظ حساب الموظف بنجاح في Supabase!\n\nالرقم الوظيفي: ${empId}\nاسم الموظف: ${name}\nاسم المستخدم: ${username}\nكلمة المرور: ${password}\nالقسم: ${dept}`);
+            alert(`✓ تم إنشاء وحفظ حساب الموظف بنجاح في Supabase!\n\nالرقم الوظيفي: ${empId}\nاسم الموظف: ${name}\nالشركة: ${company}\nالمستوى الفعلي: ${level}\nاسم المستخدم: ${username}\nكلمة المرور: ${password}`);
         };
 
         // ==========================================
@@ -7126,6 +7527,25 @@ Return ONLY a valid JSON object matching this exact schema:
                     const progressPct = Math.round((completedCount / 11) * 100);
                     const status = completedCount === 11 ? "مكتمل" : (completedCount > 0 ? "قيد التدريب" : "لم يبدأ");
 
+                    // Compute 4 Skills (Reading, Listening, Writing, Speaking)
+                    const skills = typeof calculateEmployeeSkills === "function"
+                        ? calculateEmployeeSkills(completedCount, userProg)
+                        : { reading: 0, listening: 0, writing: 0, speaking: 0 };
+
+                    // Format join date nicely
+                    let joinDate = "2026/01/01";
+                    if (acc.created_at) {
+                        try {
+                            const d = new Date(acc.created_at);
+                            if (!isNaN(d.getTime())) {
+                                const yy = d.getFullYear();
+                                const mm = String(d.getMonth() + 1).padStart(2, "0");
+                                const dd = String(d.getDate()).padStart(2, "0");
+                                joinDate = `${yy}/${mm}/${dd}`;
+                            }
+                        } catch (e) {}
+                    }
+
                     return {
                         id: acc.id,
                         number: acc.number || (acc.id.match(/\d+/) ? parseInt(acc.id.match(/\d+/)[0], 10) : 0),
@@ -7133,17 +7553,21 @@ Return ONLY a valid JSON object matching this exact schema:
                         password: acc.password,
                         name: acc.name,
                         email: acc.email || `${acc.username}@company.sa`,
+                        company: (acc.company || acc.dept || "الشركة العامة").trim(),
                         dept: acc.dept || "العامة",
+                        proficiencyLevel: acc.proficiency_level || userProg.proficiency_level || "Intermediate (متوسط B1-B2)",
                         role: acc.role || "learner",
                         avatar: acc.avatar || (acc.name ? acc.name.split(" ").map(w => w.charAt(0)).slice(0, 2).join("") : "مو"),
                         completedLessons: compLessons,
                         completedCount: completedCount,
                         progressPct: progressPct,
+                        skills: skills,
                         aiWritingScore: userProg.aiWritingScore || 0,
                         speakingPractices: userProg.speakingPractices || 0,
                         status: status,
                         lastActive: userProg.lastActive || "اليوم",
-                        createdAt: acc.created_at || "2026/01/01"
+                        joinDate: joinDate,
+                        createdAt: acc.created_at || joinDate
                     };
                 });
 
