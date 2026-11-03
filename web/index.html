@@ -1199,23 +1199,10 @@
                     </div>
                 </div>
 
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <div>
-                        <label class="font-bold text-navy block mb-1">القسم / الإدارة (Department):</label>
-                        <select id="new-user-dept" class="w-full p-2.5 rounded-xl border border-slate-300 text-xs focus:ring-2 focus:ring-teal-DEFAULT outline-none bg-white">
-                            <option value="خدمة العملاء">خدمة العملاء (Customer Support)</option>
-                            <option value="تقنية المعلومات">تقنية المعلومات (IT)</option>
-                            <option value="الموارد البشرية">الموارد البشرية (HR)</option>
-                            <option value="المبيعات والتسويق">المبيعات والتسويق (Sales)</option>
-                            <option value="العمليات واللوجستيات">العمليات واللوجستيات (Logistics)</option>
-                            <option value="الإدارة والمالية">الإدارة والمالية (Management)</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label class="font-bold text-navy block mb-1">البريد الإلكتروني (Email / Gmail):</label>
-                        <input type="email" id="new-user-email" required placeholder="khalid@gmail.com" dir="ltr"
-                            class="w-full p-2.5 rounded-xl border border-slate-300 text-xs focus:ring-2 focus:ring-teal-DEFAULT outline-none">
-                    </div>
+                <div>
+                    <label class="font-bold text-navy block mb-1">البريد الإلكتروني (Email / Gmail):</label>
+                    <input type="email" id="new-user-email" required placeholder="khalid@gmail.com" dir="ltr"
+                        class="w-full p-2.5 rounded-xl border border-slate-300 text-xs focus:ring-2 focus:ring-teal-DEFAULT outline-none">
                 </div>
 
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
@@ -1303,7 +1290,7 @@
                     </button>
                 </div>
                 <div class="p-2 rounded-xl bg-white border border-teal-200/60 font-mono text-[11px] text-slate-700 overflow-x-auto" dir="ltr">
-                    الرقم الوظيفي, الاسم الكامل, الشركة, اسم المستخدم, كلمة المرور, البريد الإلكتروني, القسم, المستوى
+                    الرقم الوظيفي, الاسم الكامل, الشركة, اسم المستخدم, كلمة المرور, البريد الإلكتروني, المستوى
                 </div>
                 <p class="text-[11px] text-slate-500 leading-relaxed">
                     يدعم الفاصلة (<code>,</code>) أو المنقوطة (<code>;</code>) أو النسخ المباشر من <strong>Excel / Google Sheets</strong>. في حال لم يُحدد المستوى يُعتمد تلقائياً (Intermediate B1-B2).
@@ -1313,7 +1300,7 @@
             <!-- Paste Input Mode -->
             <div id="bulk-paste-container" class="space-y-1.5">
                 <label class="block text-xs font-bold text-navy">الصق بيانات الموظفين هنا (حتى 400+ موظف):</label>
-                <textarea id="bulk-raw-text" rows="8" placeholder="1001,خالد بن فهد الشمري,أرامكو السعودية,khalid.shammari,Pass@1001,khalid@company.sa,خدمة العملاء,Intermediate&#10;1002,سارة بنت فهد العتيبي,سابك,sara.otaibi,Pass@1002,sara@company.sa,الموارد البشرية,Advanced&#10;1003,عبدالله بن سعد القحطاني,الاتصالات السعودية STC,abdullah.q,Pass@1003,abdullah@company.sa,تقنية المعلومات,Intermediate" class="w-full p-3 rounded-2xl border border-slate-300 text-xs font-mono text-slate-800 bg-slate-50/50 focus:bg-white focus:ring-2 focus:ring-teal-DEFAULT outline-none custom-scrollbar leading-relaxed" dir="ltr"></textarea>
+                <textarea id="bulk-raw-text" rows="8" placeholder="1001,خالد بن فهد الشمري,أرامكو السعودية,khalid.shammari,Pass@1001,khalid@company.sa,Intermediate&#10;1002,سارة بنت فهد العتيبي,شركة سابك,sara.otaibi,Pass@1002,sara@company.sa,Advanced&#10;1003,عبدالله بن سعد القحطاني,الاتصالات السعودية STC,abdullah.q,Pass@1003,abdullah@company.sa,Intermediate" class="w-full p-3 rounded-2xl border border-slate-300 text-xs font-mono text-slate-800 bg-slate-50/50 focus:bg-white focus:ring-2 focus:ring-teal-DEFAULT outline-none custom-scrollbar leading-relaxed" dir="ltr"></textarea>
             </div>
 
             <!-- Upload File Mode -->
@@ -1472,7 +1459,7 @@
                     </div>
                     <div>
                         <h3 class="font-extrabold text-navy text-lg" id="dossier-name">أحمد الغامدي</h3>
-                        <p class="text-xs text-slate-500" id="dossier-meta">الرقم: EMP-1042 • خدمة العملاء</p>
+                        <p class="text-xs text-slate-500" id="dossier-meta">الكود: EMP-1042 • الشركة: أرامكو السعودية</p>
                     </div>
                 </div>
                 <button onclick="closeEmployeeModal()" class="text-slate-400 hover:text-slate-600 p-1">
@@ -4373,6 +4360,36 @@ Return ONLY a valid JSON object matching this exact schema:
             };
         }
 
+        // ==========================================
+        // COMPANY RESOLVER & SANITIZATION HELPERS
+        // ==========================================
+        const LEGACY_DEPT_NAMES = [
+            "خدمة العملاء", "تقنية المعلومات", "الموارد البشرية", "المبيعات والتسويق",
+            "العمليات واللوجستيات", "الإدارة والمالية", "العامة", "الإدارة العامة",
+            "customer support", "it", "hr", "sales", "logistics", "management", "general"
+        ];
+
+        function sanitizeCompanyName(val) {
+            if (!val || typeof val !== 'string') return '';
+            const clean = val.trim();
+            if (!clean) return '';
+            const lower = clean.toLowerCase();
+            for (const leg of LEGACY_DEPT_NAMES) {
+                if (lower === leg.toLowerCase() || lower.startsWith(leg.toLowerCase() + " (") || lower.includes("department")) {
+                    return '';
+                }
+            }
+            return clean;
+        }
+
+        function resolveCompanyName(companyVal, deptVal, fallback = "الشركة العامة") {
+            const c1 = sanitizeCompanyName(companyVal);
+            if (c1) return c1;
+            const c2 = sanitizeCompanyName(deptVal);
+            if (c2) return c2;
+            return fallback;
+        }
+
         // Initialize LMS Admin Dashboard dynamically from LocalStorage DB
         function initLmsAdmin() {
             const accounts = getAccountsDb();
@@ -4405,6 +4422,7 @@ Return ONLY a valid JSON object matching this exact schema:
 
                 const cleanJoinDate = acc.createdAt || acc.created_at || "2026/01/15";
                 const displayJoinDate = cleanJoinDate.includes('T') ? cleanJoinDate.split('T')[0].replace(/-/g, '/') : cleanJoinDate;
+                const resolvedCompany = resolveCompanyName(acc.company, acc.dept, "الشركة العامة");
 
                 return {
                     id: acc.id,
@@ -4412,8 +4430,8 @@ Return ONLY a valid JSON object matching this exact schema:
                     username: acc.username,
                     name: acc.name,
                     email: acc.email || `${acc.username}@company.sa`,
-                    company: (acc.company || acc.dept || "الشركة العامة").trim(),
-                    dept: acc.dept || "العامة",
+                    company: resolvedCompany,
+                    dept: resolvedCompany,
                     proficiencyLevel: acc.proficiency_level || acc.proficiencyLevel || "Intermediate (متوسط B1-B2)",
                     role: acc.role || 'learner',
                     avatar: acc.avatar || (acc.name ? acc.name.split(' ').map(w => w.charAt(0)).slice(0, 2).join('') : 'مو'),
@@ -5007,7 +5025,6 @@ Return ONLY a valid JSON object matching this exact schema:
                 "اسم الموظف",
                 "الكود الوظيفي",
                 "الشركة",
-                "الإدارة / القسم",
                 "تاريخ الانضمام",
                 "المستوى الفعلي",
                 "التقدم الإجمالي",
@@ -5021,11 +5038,11 @@ Return ONLY a valid JSON object matching this exact schema:
 
             const rows = learners.map(e => {
                 const skills = e.skills || calculateEmployeeSkills(e.completedCount, e);
+                const comp = resolveCompanyName(e.company, e.dept, "الشركة العامة");
                 return [
                     `"${(e.name || '').replace(/"/g, '""')}"`,
                     `"${(e.id || '').replace(/"/g, '""')}"`,
-                    `"${(e.company || '').replace(/"/g, '""')}"`,
-                    `"${(e.dept || '').replace(/"/g, '""')}"`,
+                    `"${comp.replace(/"/g, '""')}"`,
                     `"${(e.joinDate || '').replace(/"/g, '""')}"`,
                     `"${(e.proficiencyLevel || '').replace(/"/g, '""')}"`,
                     `"${e.progressPct}%"`,
@@ -5055,9 +5072,10 @@ Return ONLY a valid JSON object matching this exact schema:
             const emp = LMS_EMPLOYEES_CACHE.find(e => e.id === empId) || currentUser;
             selectedDossierEmp = emp;
 
+            const companyDisplay = resolveCompanyName(emp.company, emp.dept, "الشركة العامة");
             document.getElementById('dossier-avatar').innerText = emp.avatar;
             document.getElementById('dossier-name').innerText = emp.name;
-            document.getElementById('dossier-meta').innerText = `الكود: ${emp.id} • الشركة: ${emp.company || 'العامة'} • انضمام: ${emp.joinDate || '2026/01/15'} • المستوى: ${emp.proficiencyLevel || 'Intermediate'} • آخر نشاط: ${emp.lastActive || 'مؤخراً'}`;
+            document.getElementById('dossier-meta').innerText = `الكود: ${emp.id} • الشركة: ${companyDisplay} • انضمام: ${emp.joinDate || '2026/01/15'} • المستوى: ${emp.proficiencyLevel || 'Intermediate'} • آخر نشاط: ${emp.lastActive || 'مؤخراً'}`;
 
             const certBtn = document.getElementById('dossier-cert-btn');
             if (emp.completedCount === 11) {
@@ -5864,7 +5882,8 @@ Return ONLY a valid JSON object matching this exact schema:
             }
             const mobRole = document.getElementById('mobile-role-badge');
             if (mobRole) {
-                mobRole.innerText = currentUser ? (isAdmin ? `مشرف • ${currentUser.id || ''}` : `موظف • ${currentUser.dept || currentUser.id || ''}`) : '';
+                const mobComp = currentUser ? resolveCompanyName(currentUser.company, currentUser.dept, '') : '';
+                mobRole.innerText = currentUser ? (isAdmin ? `مشرف • ${currentUser.id || ''}` : `موظف • ${mobComp || currentUser.id || ''}`) : '';
             }
         }
 
@@ -5879,9 +5898,10 @@ Return ONLY a valid JSON object matching this exact schema:
 
         function openAddUserModal() {
             document.getElementById('add-user-modal').classList.remove('hidden');
-            document.getElementById('new-user-fullname').value = '';
-            document.getElementById('new-user-email').value = '';
-            document.getElementById('new-user-username').value = '';
+            if (document.getElementById('new-user-fullname')) document.getElementById('new-user-fullname').value = '';
+            if (document.getElementById('new-user-company')) document.getElementById('new-user-company').value = '';
+            if (document.getElementById('new-user-email')) document.getElementById('new-user-email').value = '';
+            if (document.getElementById('new-user-username')) document.getElementById('new-user-username').value = '';
             generateRandomPassword();
             lucide.createIcons();
         }
@@ -5937,12 +5957,13 @@ Return ONLY a valid JSON object matching this exact schema:
 
         function handleCreateNewUser(e) {
             e.preventDefault();
-            const name = document.getElementById('new-user-fullname').value.trim();
-            const dept = document.getElementById('new-user-dept').value;
-            const email = document.getElementById('new-user-email').value.trim();
-            const username = document.getElementById('new-user-username').value.trim().toLowerCase();
-            const password = document.getElementById('new-user-password').value.trim();
-            const role = document.getElementById('new-user-role').value;
+            const name = (document.getElementById('new-user-fullname')?.value || '').trim();
+            const company = (document.getElementById('new-user-company')?.value || '').trim() || 'الشركة العامة';
+            const email = (document.getElementById('new-user-email')?.value || '').trim();
+            const username = (document.getElementById('new-user-username')?.value || '').trim().toLowerCase();
+            const password = (document.getElementById('new-user-password')?.value || '').trim();
+            const role = document.getElementById('new-user-role')?.value || 'learner';
+            const level = document.getElementById('new-user-level')?.value || 'Intermediate (متوسط B1-B2)';
 
             if (!name || !username || !password) {
                 alert("يرجى ملء جميع الخانات الأساسية.");
@@ -5967,7 +5988,9 @@ Return ONLY a valid JSON object matching this exact schema:
                 password: password,
                 name: name,
                 email: email,
-                dept: dept,
+                company: company,
+                dept: company,
+                proficiency_level: level,
                 role: role,
                 avatar: initials || "مو",
                 createdAt: new Date().toISOString().slice(0, 10)
@@ -5990,16 +6013,17 @@ Return ONLY a valid JSON object matching this exact schema:
             initLmsAdmin();
 
             // Clear form inputs
-            document.getElementById('new-user-fullname').value = '';
-            document.getElementById('new-user-email').value = '';
-            document.getElementById('new-user-username').value = '';
-            document.getElementById('new-user-password').value = '';
+            if (document.getElementById('new-user-fullname')) document.getElementById('new-user-fullname').value = '';
+            if (document.getElementById('new-user-company')) document.getElementById('new-user-company').value = '';
+            if (document.getElementById('new-user-email')) document.getElementById('new-user-email').value = '';
+            if (document.getElementById('new-user-username')) document.getElementById('new-user-username').value = '';
+            if (document.getElementById('new-user-password')) document.getElementById('new-user-password').value = '';
 
             closeAddUserModal();
             confetti({ particleCount: 60, spread: 70 });
 
             // Display credentials confirmation alert
-            alert(`✓ تم إنشاء وتفعيل حساب المتعلم بنجاح!\n\nاسم الموظف: ${name}\nالرقم الوظيفي: ${newId}\nاسم المستخدم (Username): ${username}\nكلمة المرور (Password): ${password}\nالصلاحية: ${role === 'admin' ? 'مشرف LMS' : 'متعلم'}\n\nيمكن للمتعلم الآن التوجه لصفحة "Your second language" وتسجيل دخوله مباشرة.`);
+            alert(`✓ تم إنشاء وتفعيل حساب المتعلم بنجاح!\n\nاسم الموظف: ${name}\nالشركة: ${company}\nالرقم الوظيفي: ${newId}\nاسم المستخدم (Username): ${username}\nكلمة المرور (Password): ${password}\nالصلاحية: ${role === 'admin' ? 'مشرف LMS' : 'متعلم'}\n\nيمكن للمتعلم الآن التوجه لصفحة "Your second language" وتسجيل دخوله مباشرة.`);
         }
 
         // Open Credentials Viewer & Password Reset Modal (Admin)
@@ -6012,13 +6036,15 @@ Return ONLY a valid JSON object matching this exact schema:
                 const emp = LMS_EMPLOYEES_CACHE.find(e => e.id === empId);
                 if (emp) {
                     const cleanUser = emp.email.split('@')[0];
+                    const empComp = resolveCompanyName(emp.company, emp.dept, "الشركة العامة");
                     account = {
                         id: emp.id,
                         username: cleanUser,
                         password: `learn${emp.number || '123'}`,
                         name: emp.name,
                         email: emp.email,
-                        dept: emp.dept,
+                        company: empComp,
+                        dept: empComp,
                         role: "learner",
                         avatar: emp.avatar,
                         createdAt: "2026/01/10"
@@ -6035,7 +6061,8 @@ Return ONLY a valid JSON object matching this exact schema:
 
             selectedCredEmployee = account;
 
-            document.getElementById('cred-modal-meta').innerText = `${account.id} • ${account.name} (${account.dept})`;
+            const credComp = resolveCompanyName(account.company, account.dept, "الشركة العامة");
+            document.getElementById('cred-modal-meta').innerText = `${account.id} • ${account.name} (${credComp})`;
             document.getElementById('cred-view-username').innerText = account.username;
             document.getElementById('cred-view-password').innerText = account.password;
             document.getElementById('cred-view-email').innerText = account.email;
@@ -7130,12 +7157,12 @@ Return ONLY a valid JSON object matching this exact schema:
         // 1. Download Sample CSV Template
         function downloadSampleCsv() {
             const csvRows = [
-                "الرقم الوظيفي,الاسم,الشركة,اسم المستخدم,كلمة المرور,البريد,القسم,المستوى",
-                "1001,خالد بن فهد الشمري,أرامكو السعودية,khalid.shammari,Pass@1001,khalid@company.sa,خدمة العملاء,Intermediate",
-                "1002,سارة بنت فهد العتيبي,شركة سابك,sara.otaibi,Pass@1002,sara@company.sa,الموارد البشرية,Advanced",
-                "1003,عبدالله بن سعد القحطاني,الاتصالات السعودية STC,abdullah.q,Pass@1003,abdullah@company.sa,تقنية المعلومات,Intermediate",
-                "1004,نورة بنت محمد الدوسري,مصرف الراجحي,noura.d,Pass@1004,noura@company.sa,المبيعات والتسويق,Beginner",
-                "1005,فيصل بن تركي الحربي,شركة نيوم,faisal.h,Pass@1005,faisal@company.sa,العمليات واللوجستيات,Intermediate"
+                "الرقم الوظيفي,الاسم,الشركة,اسم المستخدم,كلمة المرور,البريد,المستوى",
+                "1001,خالد بن فهد الشمري,أرامكو السعودية,khalid.shammari,Pass@1001,khalid@company.sa,Intermediate",
+                "1002,سارة بنت فهد العتيبي,شركة سابك,sara.otaibi,Pass@1002,sara@company.sa,Advanced",
+                "1003,عبدالله بن سعد القحطاني,الاتصالات السعودية STC,abdullah.q,Pass@1003,abdullah@company.sa,Intermediate",
+                "1004,نورة بنت محمد الدوسري,مصرف الراجحي,noura.d,Pass@1004,noura@company.sa,Beginner",
+                "1005,فيصل بن تركي الحربي,شركة نيوم,faisal.h,Pass@1005,faisal@company.sa,Intermediate"
             ];
             const content = "\uFEFF" + csvRows.join("\n");
             const blob = new Blob([content], { type: "text/csv;charset=utf-8;" });
@@ -7284,18 +7311,20 @@ Return ONLY a valid JSON object matching this exact schema:
                         username = parts[2] ? parts[2].trim().toLowerCase() : (empId ? "user_" + empId : "");
                         password = parts[3] ? parts[3].trim() : "Pass@" + empId;
                         email = parts[4] ? parts[4].trim() : `${username}@company.sa`;
-                        dept = parts[5] ? parts[5].trim() : "العامة";
-                        company = dept || "الشركة العامة";
+                        company = "الشركة العامة";
+                        dept = "الشركة العامة";
                     }
+
+                    const resolvedComp = resolveCompanyName(company, dept, "الشركة العامة");
 
                     results.push({
                         id: empId,
                         name: name,
-                        company: company,
+                        company: resolvedComp,
                         username: username,
                         password: password,
                         email: email,
-                        dept: dept,
+                        dept: resolvedComp,
                         proficiency_level: level,
                         role: "learner"
                     });
@@ -7313,7 +7342,7 @@ Return ONLY a valid JSON object matching this exact schema:
 
             const parsed = parseBulkRawText(rawText);
             if (parsed.length === 0) {
-                alert("لم يتم العثور على أسطر صالحة. تأكد من تنسيق البيانات:\nالرقم الوظيفي, الاسم, الشركة, اسم المستخدم, كلمة المرور, البريد, القسم, المستوى");
+                alert("لم يتم العثور على أسطر صالحة. تأكد من تنسيق البيانات:\nالرقم الوظيفي, الاسم, الشركة, اسم المستخدم, كلمة المرور, البريد, المستوى");
                 return;
             }
 
@@ -7374,14 +7403,15 @@ Return ONLY a valid JSON object matching this exact schema:
                     const parsedNumber = numMatch ? parseInt(numMatch[0], 10) : 0;
                     const initials = row.name.split(" ").map(w => w.charAt(0)).slice(0, 2).join("");
 
+                    const bulkComp = resolveCompanyName(row.company, row.dept, "الشركة العامة");
                     bulkParsedValidAccounts.push({
                         id: row.id,
                         number: parsedNumber,
                         username: row.username,
                         password: row.password,
                         name: row.name,
-                        company: row.company || "الشركة العامة",
-                        dept: row.dept || "العامة",
+                        company: bulkComp,
+                        dept: bulkComp,
                         proficiency_level: row.proficiency_level || "Intermediate (متوسط B1-B2)",
                         email: row.email,
                         role: "learner",
@@ -7548,7 +7578,6 @@ Return ONLY a valid JSON object matching this exact schema:
             const name = (document.getElementById("new-user-fullname")?.value || "").trim();
             const company = (document.getElementById("new-user-company")?.value || "").trim() || "الشركة العامة";
             const level = document.getElementById("new-user-level")?.value || "Intermediate (متوسط B1-B2)";
-            const dept = document.getElementById("new-user-dept")?.value || "العامة";
             const email = (document.getElementById("new-user-email")?.value || "").trim();
             const username = (document.getElementById("new-user-username")?.value || "").trim().toLowerCase();
             const password = (document.getElementById("new-user-password")?.value || "").trim();
@@ -7616,7 +7645,7 @@ Return ONLY a valid JSON object matching this exact schema:
                 name: name,
                 email: email,
                 company: company,
-                dept: dept,
+                dept: company, // Save company into dept as well so legacy columns/queries see company
                 proficiency_level: level,
                 role: role,
                 avatar: initials || "مو",
@@ -7630,6 +7659,7 @@ Return ONLY a valid JSON object matching this exact schema:
                     const fallbackAcc = { ...newAccount };
                     delete fallbackAcc.company;
                     delete fallbackAcc.proficiency_level;
+                    // fallbackAcc.dept still holds company!
                     const { error: fbErr } = await supabaseClient.from("ysl_accounts").insert([fallbackAcc]);
                     insErr = fbErr;
                 }
@@ -7819,8 +7849,8 @@ Return ONLY a valid JSON object matching this exact schema:
                         password: acc.password,
                         name: acc.name,
                         email: acc.email || `${acc.username}@company.sa`,
-                        company: (acc.company || acc.dept || "الشركة العامة").trim(),
-                        dept: acc.dept || "العامة",
+                        company: resolveCompanyName(acc.company, acc.dept, "الشركة العامة"),
+                        dept: resolveCompanyName(acc.company, acc.dept, "الشركة العامة"),
                         proficiencyLevel: acc.proficiency_level || userProg.proficiency_level || "Intermediate (متوسط B1-B2)",
                         role: acc.role || "learner",
                         avatar: acc.avatar || (acc.name ? acc.name.split(" ").map(w => w.charAt(0)).slice(0, 2).join("") : "مو"),
@@ -7970,8 +8000,8 @@ Return ONLY a valid JSON object matching this exact schema:
                             username: userRow.username,
                             name: userRow.name,
                             email: userRow.email || `${userRow.username}@company.sa`,
-                            company: (userRow.company || userRow.dept || "الشركة العامة").trim(),
-                            dept: userRow.dept || "العامة",
+                            company: resolveCompanyName(userRow.company, userRow.dept, "الشركة العامة"),
+                            dept: resolveCompanyName(userRow.company, userRow.dept, "الشركة العامة"),
                             proficiencyLevel: userRow.proficiency_level || "Intermediate (متوسط B1-B2)",
                             role: userRow.role || "learner",
                             avatar: userRow.avatar || (userRow.name ? userRow.name.split(' ').map(w => w.charAt(0)).slice(0, 2).join('') : "مو"),
