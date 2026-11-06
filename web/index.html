@@ -92,6 +92,9 @@
     </style>
     <!-- Supabase JS Client v2 -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <!-- Beginner Curriculum Data & Isolated View Gating Renderer -->
+    <script src="js/curriculum-beginner.js"></script>
+    <script src="js/curriculum-renderer.js"></script>
 </head>
 <body class="text-slate-800 antialiased min-h-screen bg-slate-50">
 
@@ -516,16 +519,40 @@
         </section>
 
         <!-- ========================================== -->
-        <!-- TAB 2: LESSONS BROWSER (استعراض الدروس 1-11) -->
+        <!-- TAB 2: LESSONS BROWSER (استعراض المناهج والدروس) -->
         <!-- ========================================== -->
         <section id="tab-lessons" class="tab-content hidden space-y-6">
-            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <!-- Header Card & Official 3-Levels Switcher -->
+            <div class="bg-white p-5 sm:p-6 rounded-3xl border border-slate-200/90 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
-                    <h2 class="text-2xl font-extrabold text-navy">الدروس التعليمية الـ 11</h2>
-                    <p class="text-xs text-slate-500 mt-1">تصفح المحاضرات، ونصوص القراءة، والمحادثات المأخوذة من المنهج المعتمد</p>
+                    <div class="flex items-center gap-2">
+                        <span class="text-xs font-bold text-teal-700 bg-teal-50 px-2.5 py-0.5 rounded-full border border-teal-200" id="current-level-badge">المستوى المتوسط (B1-B2)</span>
+                        <span class="text-[11px] text-slate-400">منهج متكامل ومعتمد رسمياً</span>
+                    </div>
+                    <h2 class="text-2xl font-black text-navy mt-1">المنهج والدروس التعليمية</h2>
+                    <p class="text-xs text-slate-500 mt-0.5 max-w-xl" id="current-level-description">تصفح شروحات الدروس، القواعد بالتفصيل، المحادثات، نصوص القراءة، المفردات، والتمارين</p>
                 </div>
-                <!-- Lesson Selector Pills -->
-                <div class="flex items-center gap-1.5 overflow-x-auto custom-scrollbar pb-2 sm:pb-0" id="lesson-pills-container">
+
+                <!-- 3 Levels Selector Switcher -->
+                <div class="flex items-center gap-1.5 bg-slate-100 p-1.5 rounded-2xl border border-slate-200/80 self-start md:self-auto flex-wrap">
+                    <button type="button" onclick="switchCurriculumLevel('beginner')" id="lvl-btn-beginner" class="px-3.5 py-2 rounded-xl text-xs font-bold transition flex items-center gap-1.5 text-slate-600 hover:text-navy hover:bg-white/60">
+                        <i data-lucide="compass" class="w-3.5 h-3.5"></i>
+                        <span>Beginner (المبتدئ)</span>
+                    </button>
+                    <button type="button" onclick="switchCurriculumLevel('intermediate')" id="lvl-btn-intermediate" class="px-3.5 py-2 rounded-xl text-xs font-bold transition flex items-center gap-1.5 bg-navy text-white shadow-sm">
+                        <i data-lucide="layers" class="w-3.5 h-3.5"></i>
+                        <span>Intermediate (المتوسط)</span>
+                    </button>
+                    <button type="button" onclick="switchCurriculumLevel('advanced')" id="lvl-btn-advanced" class="px-3.5 py-2 rounded-xl text-xs font-bold transition flex items-center gap-1.5 text-slate-600 hover:text-navy hover:bg-white/60">
+                        <i data-lucide="award" class="w-3.5 h-3.5"></i>
+                        <span>Advanced (المتقدم)</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Lesson Selector Pills Bar -->
+            <div class="flex items-center gap-2 overflow-x-auto custom-scrollbar pb-1" id="lesson-pills-bar">
+                <div class="flex items-center gap-1.5" id="lesson-pills-container">
                     <!-- Injected via JS -->
                 </div>
             </div>
@@ -1967,359 +1994,98 @@ USING (bucket_id = 'videos');</pre>
     <!-- App JavaScript & Data Logic -->
     <script>
         // ==========================================
-        // 1. DATA REPOSITORY: 11 LESSONS & SPECIFICATIONS
+        // 1. DATA REPOSITORY: 3 CURRICULUM LEVELS (BEGINNER, INTERMEDIATE, ADVANCED)
         // ==========================================
-        const LESSONS_DATA = [
-            {
-                id: 1,
-                number: 1,
-                title: "Making Requests",
-                titleAr: "تقديم الطلبات بأدب",
-                description: "تعلم صياغة الطلبات المهذبة باستخدام Could you, Would you mind, May I, Can you please في مواقف حقيقية كالمكتبة واستعارة الأشياء.",
-                targetGrammar: "Polite Requests & Present Perfect for Experiences",
-                readings: [
-                    {
-                        title: "At the Library (في المكتبة)",
-                        text: "One afternoon, a student goes to the university library to study for his history class. He cannot find the book he needs, so he decides to ask the librarian for help.\n\nStudent: Excuse me, could you help me find a history book?\nLibrarian: Of course. What kind of history book do you need?\nStudent: I'm looking for a book about ancient Egypt. Could you show me where I can find it?\nLibrarian: Certainly. The history section is on the second floor.\nStudent: Thank you. Also, could I borrow the book if I find it?\nLibrarian: Yes, you can. You just need your student card.\nStudent: Great! Would you mind telling me how long I can keep the book?\nLibrarian: You can borrow it for two weeks.\nStudent: Thank you very much for your help."
-                    }
-                ],
-                dialogues: [
-                    { speakerA: "Ken", textA: "Excuse me. Could you please give me directions to the library?", speakerB: "Kud", textB: "Of course. Go straight and then turn right. The library is on the left." },
-                    { speakerA: "Student", textA: "Would you mind opening the window, please?", speakerB: "Classmate", textB: "Not at all, it was getting warm in here." }
-                ],
-                expressions: [
-                    "Could you please explain the lesson again?",
-                    "Would you mind helping me with my homework?",
-                    "May I borrow your phone for a moment?",
-                    "Can you please lend me your pencil?"
-                ],
-                writingSpec: {
-                    activityId: "L1_POLITE_REQUESTS",
-                    taskType: "POLITE_REQUESTS",
-                    requiredItems: 4,
-                    minWords: 15,
-                    prompt: "Write polite requests for these situations:\n1. Ask your teacher to explain the lesson again.\n2. Ask your friend to help you with homework.\n3. Ask someone to open the window.\n4. Ask to borrow a phone.",
-                    targetGrammar: "Polite Requests (Could you, Would you mind, May I, Can you please)",
-                    modelAnswer: "1. Could you please explain the lesson again?\n2. Could you help me with my homework, please?\n3. Would you mind opening the window?\n4. May I borrow your phone, please?"
-                }
+        const CURRICULUM_DATA = {
+            beginner: {
+                id: "beginner",
+                name: "Beginner",
+                nameAr: "المستوى المبتدئ (A1-A2)",
+                badge: "A1-A2 Foundation",
+                cefr: "A1 - A2 (CEFR)",
+                description: "الأساسيات الشاملة للغة الإنجليزية: بناء الجمل، المحادثات اليومية، المفردات المحورية، القواعد التأسيسية، وتمارين الاستماع والنطق.",
+                lessons: (typeof window !== "undefined" && window.BEGINNER_LESSONS_DATA) ? window.BEGINNER_LESSONS_DATA : []
             },
-            {
-                id: 2,
-                number: 2,
-                title: "Giving Advice",
-                titleAr: "تقديم النصيحة",
-                description: "تقديم النصائح المفيدة باستخدام should, shouldn't, ought to مع التركيز على نمط الحياة الصحي والماضي التام Past Perfect.",
-                targetGrammar: "Giving Advice (should, shouldn't, ought to) & Past Perfect Tense",
-                readings: [
-                    {
-                        title: "How to Stay Healthy (كيف تحافظ على صحتك)",
-                        text: "Staying healthy is important. You should eat fresh food and exercise regularly. Have you ever considered how much sugar is hidden in the drinks and snacks you consume every day? You shouldn't eat too much fast food. If you feel stressed, you should relax and get enough sleep. It is also a good idea to drink plenty of water regularly."
-                    }
-                ],
-                dialogues: [
-                    { speakerA: "Doctor", textA: "What's the matter? You look exhausted.", speakerB: "Patient", textB: "I have a terrible headache and cannot sleep." },
-                    { speakerA: "Doctor", textA: "You should rest and drink warm fluids. You ought to avoid computer screens before bedtime.", speakerB: "Patient", textB: "Thank you doctor, that's sound advice." }
-                ],
-                expressions: [
-                    "You should practice speaking English every day.",
-                    "You shouldn't be afraid of making mistakes.",
-                    "You ought to read English stories and news regularly."
-                ],
-                writingSpec: {
-                    activityId: "L2_GIVING_ADVICE",
-                    taskType: "ADVICE_WRITING",
-                    requiredItems: 4,
-                    minWords: 25,
-                    prompt: "Write a short paragraph (4–5 sentences) about 'Advice for a student who wants to improve English' using should, shouldn't, and ought to.",
-                    targetGrammar: "Giving Advice (should, shouldn't, ought to)",
-                    modelAnswer: "You should practice speaking English every day with your friends. You shouldn't be afraid of making mistakes because that is how you learn. Furthermore, you ought to read English stories and articles regularly to expand your vocabulary. You should also listen to English podcasts to improve your pronunciation."
-                }
+            intermediate: {
+                id: "intermediate",
+                name: "Intermediate",
+                nameAr: "المستوى المتوسط (B1-B2)",
+                badge: "B1-B2 Professional",
+                cefr: "B1 - B2 (CEFR)",
+                description: "تطوير الطلاقة المهنية وبيئات العمل: التواصل مع العملاء، المحادثات الرسمية، نصوص القراءة المتقدمة، كتابة التقارير، وقواعد الربط.",
+                lessons: [] // مصفوفة الدروس جاهزة لاستقبال ملزمة المستوى المتوسط (PDF) كاملة حرفياً
             },
-            {
-                id: 3,
-                number: 3,
-                title: "Making Suggestions",
-                titleAr: "تقديم الاقتراحات",
-                description: "طرق وأساليب الاقتراح بالإنجليزية (Let's, Why don't we, How about + ing, We could) وقبول ورفض الاقتراحات بلباقة.",
-                targetGrammar: "Suggestion Structures & Past Continuous",
-                readings: [
-                    {
-                        title: "Planning the Weekend (التخطيط لعطلة نهاية الأسبوع)",
-                        text: "The weekend is approaching and friends are making plans. Why don't we visit the local art museum? How about trying that new Italian restaurant downtown? We could also invite our classmates for a study group on Sunday afternoon."
-                    }
-                ],
-                dialogues: [
-                    { speakerA: "Sarah", textA: "Why don't we go to the park this afternoon?", speakerB: "Lina", textB: "That sounds like a great idea! Let's take some sandwiches with us." }
-                ],
-                expressions: [
-                    "Let's visit the city library today.",
-                    "Why don't we review our grammar notes together?",
-                    "How about going for a walk after lunch?",
-                    "We could watch an English documentary tonight."
-                ],
-                writingSpec: {
-                    activityId: "L3_MAKING_SUGGESTIONS",
-                    taskType: "SUGGESTIONS_WRITING",
-                    requiredItems: 4,
-                    minWords: 35,
-                    prompt: "Write a short paragraph on the topic: 'What should we do this weekend?' using suggestion structures (Let's, Why don't we, How about + ing, We could).",
-                    targetGrammar: "Suggestion Formulas (Let's, Why don't we, How about, We could)",
-                    modelAnswer: "First, let's visit the city museum on Saturday morning. Why don't we have lunch at the Italian restaurant downtown? How about going for a walk along the river in the afternoon? We could also invite our friends to join us for a movie."
-                }
-            },
-            {
-                id: 4,
-                number: 4,
-                title: "At the Airport",
-                titleAr: "في المطار وإجراءات السفر",
-                description: "مصطلحات المطار، بطاقة الصعود، الجوازات، التفتيش الأمني، وكلمات التسلسل الزمني (First, Then, Next, After that, Finally).",
-                targetGrammar: "Time Sequencing Connectors (First, Then, Next, After that, Finally)",
-                readings: [
-                    {
-                        title: "Airport Check-in Procedures",
-                        text: "First, international travelers must arrive at the terminal two hours before departure. Then, they proceed to the airline check-in desk to weigh their luggage and collect their boarding pass. Next, they pass through security screening and border control. After that, passengers wait near the designated departure gate. Finally, they board the aircraft when the flight attendant announces boarding."
-                    }
-                ],
-                dialogues: [
-                    { speakerA: "Agent", textA: "May I see your passport and ticket, please?", speakerB: "Traveler", textB: "Here you are. Can I have a window seat, please?" }
-                ],
-                expressions: [
-                    "First, check in your luggage at the counter.",
-                    "Then, collect your boarding pass.",
-                    "Next, go through the security checkpoint.",
-                    "After that, proceed to departure gate 12.",
-                    "Finally, board the plane smoothly."
-                ],
-                writingSpec: {
-                    activityId: "L4_AIRPORT_TIME_SEQUENCING",
-                    taskType: "TIME_SEQUENCING_WRITING",
-                    requiredItems: 5,
-                    minWords: 35,
-                    prompt: "Write 5–7 sentences about your experience at the airport using time sequencing words: First, Then, Next, After that, Finally.",
-                    targetGrammar: "Time Sequencing Connectors (First, Then, Next, After that, Finally)",
-                    modelAnswer: "First, I arrived at the international airport terminal two hours before my flight. Then, I proceeded to the airline check-in counter to drop off my heavy luggage and collect my boarding pass. Next, I walked through the security screening checkpoint with my carry-on bag. After that, I waited near departure gate 14 and enjoyed a cup of coffee. Finally, the flight attendants announced boarding and we boarded smoothly."
-                }
-            },
-            {
-                id: 5,
-                number: 5,
-                title: "At the Hotel",
-                titleAr: "في الفندق والخدمات الفندقية",
-                description: "إجراءات الحجز والنزول بالفندق، التعامل مع موظف الاستقبال، واستخدام روابط الجمل (Because, Although, However).",
-                targetGrammar: "Linking Words (Because, Although, However)",
-                readings: [
-                    {
-                        title: "A Comfortable Hotel Stay",
-                        text: "Last month, I stayed at a coastal hotel because I needed to attend an educational seminar. Although the hotel was fully booked, the front desk receptionist checked us in quickly. However, the elevator was temporarily under maintenance on the first evening, so we took the stairs."
-                    }
-                ],
-                dialogues: [
-                    { speakerA: "Receptionist", textA: "Welcome to The Grand Hotel. How may I assist you today?", speakerB: "Guest", textB: "Good evening, I have a reservation under the name Al-Mansoor." }
-                ],
-                expressions: [
-                    "I chose this hotel because it is close to the city center.",
-                    "Although the room was small, it had a beautiful balcony.",
-                    "However, breakfast was served slightly late."
-                ],
-                writingSpec: {
-                    activityId: "L5_HOTEL_LINKING_WORDS",
-                    taskType: "STORY_WRITING",
-                    requiredItems: 4,
-                    minWords: 30,
-                    prompt: "Write a short story using linking words (Because, Although, However) about booking and staying at a hotel.",
-                    targetGrammar: "Linking Words (Because, Although, However)",
-                    modelAnswer: "Last summer, I booked a seaside hotel room because my family needed a relaxing vacation. Although the resort was crowded during peak season, the front desk receptionist checked us in with great efficiency. However, the air conditioner in our bedroom was slightly noisy on the first night. The hotel manager promptly resolved the problem."
-                }
-            },
-            {
-                id: 6,
-                number: 6,
-                title: "At the Police Station",
-                titleAr: "في قسم الشرطة (الإبلاغ عن سرقة)",
-                description: "الإبلاغ الرسمي عن الحوادث، وصف المشتبه بهم والممتلكات المفقودة، وصياغة تقرير شرطي متقن في صيغة الماضي.",
-                targetGrammar: "Formal Past Tense & Description Register",
-                readings: [
-                    {
-                        title: "Official Incident Report",
-                        text: "On Monday at 3:15 PM, the victim reported the theft of a black leather backpack near Central Station. The backpack contained a silver laptop, university notebooks, and a personal wallet. The suspect was a tall male approximately thirty years old wearing a dark hooded jacket."
-                    }
-                ],
-                dialogues: [
-                    { speakerA: "Officer", textA: "Can you describe exactly what the suspect looked like?", speakerB: "Witness", textB: "He was medium height, had short black hair, and wore a blue jacket." }
-                ],
-                expressions: [
-                    "My backpack was stolen yesterday afternoon.",
-                    "The suspect fled toward the train station.",
-                    "I would like to file an official police report."
-                ],
-                writingSpec: {
-                    activityId: "L6_POLICE_REPORT",
-                    taskType: "POLICE_REPORT",
-                    requiredItems: 5,
-                    minWords: 35,
-                    prompt: "Write a short police report (5–7 sentences) describing a lost or stolen item and what the suspect looked like.",
-                    targetGrammar: "Formal Past Tense & Suspect Description",
-                    modelAnswer: "On October 12, the victim reported the theft of a black leather backpack near Central Station. The backpack contained a silver laptop and university textbooks. The suspect was a tall male wearing a dark hooded jacket and blue jeans. The suspect fled on foot toward Elm Street immediately after grabbing the bag."
-                }
-            },
-            {
-                id: 7,
-                number: 7,
-                title: "Health Problems",
-                titleAr: "المشاكل الصحية والأمراض",
-                description: "التمييز بين أعراض البرد والإنفلونزا، زيارة الطبيب، الوصفات الطبية، وصياغة يوميات صحية بأسلوب متسق.",
-                targetGrammar: "Health Expressions & Medical Advice",
-                readings: [
-                    {
-                        title: "Flu Symptoms vs Common Cold",
-                        text: "A cold usually develops gradually and causes a runny nose, mild fatigue, and sneezing. In contrast, the flu hits suddenly with high fever, severe muscle aches, and chills. Dr. Adams advised patients to drink plenty of warm fluids and rest in bed."
-                    }
-                ],
-                dialogues: [
-                    { speakerA: "Doctor", textA: "How long have you had this fever and sore throat?", speakerB: "Patient", textB: "It started two days ago, and my headache is getting worse." }
-                ],
-                expressions: [
-                    "I have a sore throat and a high fever.",
-                    "The doctor prescribed antibiotics and pain relief medicine.",
-                    "You must drink plenty of fluids and rest."
-                ],
-                writingSpec: {
-                    activityId: "L7_HEALTH_DIARY_ENTRY",
-                    taskType: "DIARY_ENTRY",
-                    requiredItems: 4,
-                    minWords: 40,
-                    prompt: "Write a diary entry (5–7 sentences) about a time when you were unwell, including symptoms and the doctor's advice.",
-                    targetGrammar: "Medical Expressions & Health Advice",
-                    modelAnswer: "Dear Diary, yesterday morning I woke up with a sharp headache and a painful sore throat. By afternoon, I was shivering with a high fever and continuous coughing. My mother called the family clinic, and the doctor advised me to stay in bed, drink plenty of warm fluids, and take medicine every eight hours. I followed the advice and already feel much better tonight."
-                }
-            },
-            {
-                id: 8,
-                number: 8,
-                title: "At the Restaurant",
-                titleAr: "في المطعم ومراجعة الوجبات",
-                description: "طلب الوجبات والمشروبات، تقييم المطاعم (The Golden Fork)، الحوار مع النادل، ودفع الحساب وتقديم الإكرامية.",
-                targetGrammar: "Descriptive Sensory Language & Dining Expressions",
-                readings: [
-                    {
-                        title: "Dining Review: The Olive Tree",
-                        text: "Last Friday evening, my family had dinner at The Olive Tree restaurant. The atmosphere was warm with soft background music. For appetizers, we ordered hot garlic bread and Caesar salad. For the main course, I ordered grilled salmon with steamed vegetables. The service was prompt and professional throughout the meal."
-                    }
-                ],
-                dialogues: [
-                    { speakerA: "Waiter", textA: "Are you ready to order, or would you like a few more minutes?", speakerB: "Customer", textB: "We are ready. I'll have the mushroom pasta, please." }
-                ],
-                expressions: [
-                    "Could we see the dessert menu, please?",
-                    "Excuse me, could we have the bill?",
-                    "The food was delicious and the service was excellent."
-                ],
-                writingSpec: {
-                    activityId: "L8_RESTAURANT_REVIEW",
-                    taskType: "RESTAURANT_REVIEW",
-                    requiredItems: 4,
-                    minWords: 40,
-                    prompt: "Write 6–8 sentences about your last dining experience at a restaurant (food, atmosphere, service, and paying the bill).",
-                    targetGrammar: "Sensory & Dining Expressions (appetizer, main course, bill, atmosphere)",
-                    modelAnswer: "Last Friday evening, my family and I had dinner at The Olive Tree restaurant downtown. The atmosphere was cozy with soft instrumental music playing. For appetizers, we ordered hot garlic bread and fresh salad. For the main course, I had grilled salmon which was delicious. Finally, we requested the bill and paid by card, leaving a tip."
-                }
-            },
-            {
-                id: 9,
-                number: 9,
-                title: "Inconveniences and Problems",
-                titleAr: "المضايقات وحل المشاكل",
-                description: "تقديم الشكاوى بلباقة واحترافية، التواصل مع خدمة العملاء، وتقديم الحلول والتعويضات البديلة.",
-                targetGrammar: "Problem-Solution Discourse Phrases",
-                readings: [
-                    {
-                        title: "Resolving a Defective Order",
-                        text: "Customer service agents handle inconveniences daily. When an item arrives defective or delayed, agents must apologize sincerely, listen attentively, and provide an immediate resolution such as a replacement or full refund."
-                    }
-                ],
-                dialogues: [
-                    { speakerA: "Customer", textA: "I'm calling because the headphones I ordered arrived with a broken port.", speakerB: "Agent", textB: "I sincerely apologize for the inconvenience. I will dispatch a brand new replacement today." }
-                ],
-                expressions: [
-                    "I am writing to complain about a defective product.",
-                    "We apologize sincerely for this inconvenience.",
-                    "We have issued a full refund to your account."
-                ],
-                writingSpec: {
-                    activityId: "L9_PROBLEM_SOLUTION",
-                    taskType: "PROBLEM_SOLUTION_WRITING",
-                    requiredItems: 4,
-                    minWords: 35,
-                    prompt: "Write a short paragraph about an inconvenience or problem you experienced recently and how it was solved.",
-                    targetGrammar: "Problem-Solution Discourse Phrases",
-                    modelAnswer: "Last Tuesday, I experienced an inconvenience when the wireless headphones I ordered arrived with a broken charging port. I called customer service to report the defect. The representative was extremely polite and apologized for the trouble. She promptly issued a return label and dispatched a brand new replacement unit, which arrived in perfect condition."
-                }
-            },
-            {
-                id: 10,
-                number: 10,
-                title: "A Business Phone Call",
-                titleAr: "مكالمة عمل هاتفية واحترافية",
-                description: "آداب المحادثات الهاتفية الرسمية في بيئة العمل، ترك رسالة للمدير، تحويل المكالمات، والمفردات المهذبة.",
-                targetGrammar: "Professional Telephone Register",
-                readings: [
-                    {
-                        title: "Office Phone Etiquette",
-                        text: "Professional telephone conversations require a courteous greeting, clear self-introduction, active listening, and a polite closing. Always confirm details when taking a message for a colleague who is away from their desk."
-                    }
-                ],
-                dialogues: [
-                    { speakerA: "Secretary", textA: "Apex Solutions, Mark speaking. How may I help you today?", speakerB: "Caller", textB: "Good morning. May I speak with Mr. Davis, please?" },
-                    { speakerA: "Secretary", textA: "I'm afraid he is currently in a meeting. Would you like to leave a message?", speakerB: "Caller", textB: "Yes, please ask him to call me back regarding the revised contract." }
-                ],
-                expressions: [
-                    "This is Sarah Jenkins from Horizon Tech.",
-                    "Could you ask him to call me back at his earliest convenience?",
-                    "Thank you for calling. Have a great day."
-                ],
-                writingSpec: {
-                    activityId: "L10_PHONE_DIALOGUE",
-                    taskType: "DIALOGUE_WRITING",
-                    requiredItems: 4,
-                    minWords: 30,
-                    prompt: "Write a short professional phone conversation (5–8 lines) between an employee and a caller including greeting, taking a message, and closing.",
-                    targetGrammar: "Professional Telephone Register",
-                    modelAnswer: "Employee: Good morning, Apex Solutions, Mark speaking. How may I help you today?\nCaller: Good morning. This is Sarah Jenkins. May I speak with Mr. Davis, please?\nEmployee: I'm afraid Mr. Davis is in a meeting. Would you like to leave a message?\nCaller: Yes, please ask him to call me back regarding the contract.\nEmployee: Certainly, Ms. Jenkins. I will give him your message. Thank you for calling."
-                }
-            },
-            {
-                id: 11,
-                number: 11,
-                title: "Handling Rude Customers",
-                titleAr: "التعامل مع العملاء الغاضبين",
-                description: "مهارات امتصاص الغضب وإظهار التعاطف، وحل شكاوى التأخير باستخدام الروابط المتقدمة (However, Therefore, Furthermore, Nevertheless).",
-                targetGrammar: "Advanced Formal Connectors (However, Therefore, Furthermore, Nevertheless)",
-                readings: [
-                    {
-                        title: "De-escalating Customer Frustration",
-                        text: "Customer service representatives encounter angry clients regularly. However, maintaining a calm and empathetic tone de-escalates tension effectively. Therefore, training in active listening is crucial. Furthermore, offering constructive solutions rebuilds trust. Nevertheless, agents must remain patient even during intense calls."
-                    }
-                ],
-                dialogues: [
-                    { speakerA: "Agent", textA: "I completely understand why you are upset, sir. Let me personally track your delivery right now.", speakerB: "Customer", textB: "Thank you. I appreciate you taking ownership of this problem." }
-                ],
-                expressions: [
-                    "However, our representative maintained a courteous tone.",
-                    "Therefore, the customer felt heard and respected.",
-                    "Furthermore, we expedited the replacement delivery.",
-                    "Nevertheless, customer satisfaction remains our top priority."
-                ],
-                writingSpec: {
-                    activityId: "L11_ADVANCED_CONNECTORS",
-                    taskType: "ADVANCED_CONNECTORS_WRITING",
-                    requiredItems: 4,
-                    minWords: 35,
-                    prompt: "Write a short text about dealing with a challenging customer service situation using linking words: However, Therefore, Furthermore, Nevertheless.",
-                    targetGrammar: "Advanced Connectors (However, Therefore, Furthermore, Nevertheless)",
-                    modelAnswer: "Dealing with angry customers requires high patience and active empathy. An upset client called yesterday demanding an immediate cancellation. However, our agent maintained a calm and courteous tone. Therefore, the customer gradually lowered his voice. Furthermore, the agent offered expedited shipping and a twenty percent discount. Nevertheless, resolving escalations depends on professional listening."
+            advanced: {
+                id: "advanced",
+                name: "Advanced",
+                nameAr: "المستوى المتقدم (C1-C2)",
+                badge: "C1-C2 Mastery",
+                cefr: "C1 - C2 (CEFR)",
+                description: "إتقان اللغة والتفاوض الإداري: التفكير النقدي، المصطلحات التخصصية للأعمال، الاجتماعات والعروض التقديمية، ومهارات التحدث والكتابة الاحترافية.",
+                lessons: [] // مصفوفة الدروس جاهزة لاستقبال ملزمة المستوى المتقدم (PDF) كاملة حرفياً
+            }
+        };
+
+        let currentCurriculumLevel = "beginner";
+
+        function getActiveLevelData() {
+            if (currentCurriculumLevel === "beginner" && (!CURRICULUM_DATA.beginner.lessons || CURRICULUM_DATA.beginner.lessons.length === 0)) {
+                if (typeof window !== "undefined" && window.BEGINNER_LESSONS_DATA) {
+                    CURRICULUM_DATA.beginner.lessons = window.BEGINNER_LESSONS_DATA;
                 }
             }
-        ];
+            return CURRICULUM_DATA[currentCurriculumLevel] || CURRICULUM_DATA.beginner;
+        }
+
+        function getActiveLessons() {
+            return getActiveLevelData().lessons || [];
+        }
+
+        // Global compatibility pointer for legacy references
+        let LESSONS_DATA = [];
+
+        function syncLevelFromUser(user) {
+            if (!user) return;
+            const lvl = (user.proficiencyLevel || user.proficiency_level || "").toLowerCase();
+            if (lvl.includes("advanced") || lvl.includes("متقدم") || lvl.includes("c1") || lvl.includes("c2")) {
+                currentCurriculumLevel = "advanced";
+            } else if (lvl.includes("intermediate") || lvl.includes("متوسط") || lvl.includes("b1") || lvl.includes("b2")) {
+                currentCurriculumLevel = "intermediate";
+            } else {
+                currentCurriculumLevel = "beginner";
+            }
+            LESSONS_DATA = getActiveLessons();
+        }
+
+        function switchCurriculumLevel(levelKey) {
+            if (!CURRICULUM_DATA[levelKey]) return;
+            currentCurriculumLevel = levelKey;
+            LESSONS_DATA = getActiveLessons();
+            currentLessonId = 1;
+
+            // Update Level Selector UI buttons
+            ["beginner", "intermediate", "advanced"].forEach(k => {
+                const btn = document.getElementById(`lvl-btn-${k}`);
+                if (btn) {
+                    if (k === levelKey) {
+                        btn.className = "px-3.5 py-2 rounded-xl text-xs font-bold transition flex items-center gap-1.5 bg-navy text-white shadow-sm ring-2 ring-navy/20";
+                    } else {
+                        btn.className = "px-3.5 py-2 rounded-xl text-xs font-bold transition flex items-center gap-1.5 text-slate-600 hover:text-navy hover:bg-white/60";
+                    }
+                }
+            });
+
+            // Update badge & descriptions in header
+            const levelData = getActiveLevelData();
+            const badge = document.getElementById("current-level-badge");
+            if (badge) badge.innerText = levelData.nameAr;
+            const desc = document.getElementById("current-level-description");
+            if (desc) desc.innerText = levelData.description;
+
+            // Re-render lessons tab
+            renderLessonsTab();
+            if (window.lucide) lucide.createIcons();
+        }
 
         // Grammar Topics Database
         const GRAMMAR_TOPICS = [
@@ -2585,35 +2351,176 @@ USING (bucket_id = 'videos');</pre>
             if (modal) modal.classList.add('hidden');
         }
 
+        function renderCurriculumAwaitingPdfView(levelData) {
+            const detailContainer = document.getElementById('lesson-detail-container');
+            if (!detailContainer) return;
+
+            detailContainer.innerHTML = `
+                <div class="bg-gradient-to-br from-white via-slate-50 to-teal-50/30 p-6 sm:p-10 rounded-3xl border-2 border-dashed border-teal-200/90 shadow-sm space-y-8 text-center animate-fade-in">
+                    <!-- Level Badge & Main Title -->
+                    <div class="max-w-2xl mx-auto space-y-3">
+                        <div class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-teal-50 border border-teal-200 text-teal-800 text-xs font-black shadow-xs">
+                            <span class="w-2.5 h-2.5 rounded-full bg-teal-500 animate-ping"></span>
+                            <span>${levelData.nameAr} • ${levelData.cefr}</span>
+                        </div>
+                        <h3 class="text-2xl sm:text-3xl font-black text-navy">
+                            جاهزية هيكل المنهج لاستقبال الملازم (PDF)
+                        </h3>
+                        <p class="text-sm text-slate-600 leading-relaxed">
+                            تمت إعادة هيكلة المنهج بالكامل ليدعم المستويات الثلاثة (المبتدئ، المتوسط، والمتقدم) وفق معايير CEFR الدولية. تم تفريغ الدروس القديمة غير المكتملة، وتجهيز كافة الأقسام والمكونات التفاعلية داخل مصفوفة المنهج لتستقبل ملازمك بصيغة PDF وتستخرج الدروس كاملة حرفياً بدون أي حذف.
+                        </p>
+                    </div>
+
+                    <!-- 8 Fully Prepared Curriculum Sections Grid -->
+                    <div class="space-y-4 max-w-4xl mx-auto text-right">
+                        <div class="flex items-center justify-between border-b border-slate-200 pb-2">
+                            <span class="text-xs font-black text-navy flex items-center gap-2">
+                                <i data-lucide="layers" class="w-4 h-4 text-teal-DEFAULT"></i>
+                                <span>الأقسام التعليمية الثمانية المجهزة داخل كل درس فور استخراج الملزمة:</span>
+                            </span>
+                            <span class="text-[11px] font-bold text-teal-700 bg-teal-50 px-2.5 py-0.5 rounded-full border border-teal-200">
+                                بنية شاملة 100%
+                            </span>
+                        </div>
+
+                        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
+                            <div class="p-4 rounded-2xl bg-white border border-slate-200/90 shadow-xs flex items-start gap-3 hover:border-teal-300 transition">
+                                <div class="w-9 h-9 rounded-xl bg-teal-50 text-teal-700 flex items-center justify-center flex-shrink-0 font-black text-sm">1</div>
+                                <div>
+                                    <h5 class="text-xs font-extrabold text-navy">الأهداف والمخرجات</h5>
+                                    <p class="text-[11px] text-slate-500 mt-0.5">Objectives & Outcomes</p>
+                                </div>
+                            </div>
+                            <div class="p-4 rounded-2xl bg-white border border-slate-200/90 shadow-xs flex items-start gap-3 hover:border-teal-300 transition">
+                                <div class="w-9 h-9 rounded-xl bg-indigo-50 text-indigo-700 flex items-center justify-center flex-shrink-0 font-black text-sm">2</div>
+                                <div>
+                                    <h5 class="text-xs font-extrabold text-navy">المختبر المرئي والصوتي</h5>
+                                    <p class="text-[11px] text-slate-500 mt-0.5">Video & Multi-speed Audio</p>
+                                </div>
+                            </div>
+                            <div class="p-4 rounded-2xl bg-white border border-slate-200/90 shadow-xs flex items-start gap-3 hover:border-teal-300 transition">
+                                <div class="w-9 h-9 rounded-xl bg-blue-50 text-blue-700 flex items-center justify-center flex-shrink-0 font-black text-sm">3</div>
+                                <div>
+                                    <h5 class="text-xs font-extrabold text-navy">نصوص القراءة والفهم</h5>
+                                    <p class="text-[11px] text-slate-500 mt-0.5">Full Passage + Audio & Summary</p>
+                                </div>
+                            </div>
+                            <div class="p-4 rounded-2xl bg-white border border-slate-200/90 shadow-xs flex items-start gap-3 hover:border-teal-300 transition">
+                                <div class="w-9 h-9 rounded-xl bg-purple-50 text-purple-700 flex items-center justify-center flex-shrink-0 font-black text-sm">4</div>
+                                <div>
+                                    <h5 class="text-xs font-extrabold text-navy">حوارات المحادثة الواقعية</h5>
+                                    <p class="text-[11px] text-slate-500 mt-0.5">Workplace Practical Dialogues</p>
+                                </div>
+                            </div>
+                            <div class="p-4 rounded-2xl bg-white border border-slate-200/90 shadow-xs flex items-start gap-3 hover:border-teal-300 transition">
+                                <div class="w-9 h-9 rounded-xl bg-amber-50 text-amber-700 flex items-center justify-center flex-shrink-0 font-black text-sm">5</div>
+                                <div>
+                                    <h5 class="text-xs font-extrabold text-navy">شرح القواعد بالتفصيل</h5>
+                                    <p class="text-[11px] text-slate-500 mt-0.5">Formulas, Tables & Mistakes</p>
+                                </div>
+                            </div>
+                            <div class="p-4 rounded-2xl bg-white border border-slate-200/90 shadow-xs flex items-start gap-3 hover:border-teal-300 transition">
+                                <div class="w-9 h-9 rounded-xl bg-emerald-50 text-emerald-700 flex items-center justify-center flex-shrink-0 font-black text-sm">6</div>
+                                <div>
+                                    <h5 class="text-xs font-extrabold text-navy">المفردات والتعابير</h5>
+                                    <p class="text-[11px] text-slate-500 mt-0.5">Vocab Cards with Audio & Meaning</p>
+                                </div>
+                            </div>
+                            <div class="p-4 rounded-2xl bg-white border border-slate-200/90 shadow-xs flex items-start gap-3 hover:border-teal-300 transition">
+                                <div class="w-9 h-9 rounded-xl bg-rose-50 text-rose-700 flex items-center justify-center flex-shrink-0 font-black text-sm">7</div>
+                                <div>
+                                    <h5 class="text-xs font-extrabold text-navy">التمارين والأسئلة التفاعلية</h5>
+                                    <p class="text-[11px] text-slate-500 mt-0.5">MCQ, Fill Blanks, True/False</p>
+                                </div>
+                            </div>
+                            <div class="p-4 rounded-2xl bg-white border border-slate-200/90 shadow-xs flex items-start gap-3 hover:border-teal-300 transition">
+                                <div class="w-9 h-9 rounded-xl bg-cyan-50 text-cyan-700 flex items-center justify-center flex-shrink-0 font-black text-sm">8</div>
+                                <div>
+                                    <h5 class="text-xs font-extrabold text-navy">مهام الكتابة والتحدث (AI)</h5>
+                                    <p class="text-[11px] text-slate-500 mt-0.5">AI Writing & Speaking Workshop</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- PDF Upload Instruction Callout -->
+                    <div class="p-5 sm:p-6 rounded-2xl bg-white border border-teal-200/90 max-w-2xl mx-auto shadow-sm flex flex-col sm:flex-row items-center gap-4 text-right">
+                        <div class="w-12 h-12 rounded-2xl bg-teal-500 text-white flex items-center justify-center flex-shrink-0 shadow-md shadow-teal-500/20">
+                            <i data-lucide="file-up" class="w-6 h-6"></i>
+                        </div>
+                        <div class="flex-1">
+                            <h4 class="text-sm font-extrabold text-navy">الخطوة القادمة: رفع ملزمة المستوى (PDF)</h4>
+                            <p class="text-xs text-slate-600 mt-1 leading-relaxed">
+                                أرسل ملف الـ PDF الخاص بـ <strong>${levelData.nameAr}</strong> في رسالتك التالية، وسيقوم النظام فوراً باستخراج النصوص والقواعد والتمارين وإدراجها كاملة في مصفوفة هذا المستوى.
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- Quick Switcher for Other Levels -->
+                    <div class="pt-2 flex items-center justify-center gap-2 flex-wrap">
+                        <span class="text-xs font-bold text-slate-400">معاينة مستويات أخرى:</span>
+                        <button onclick="switchCurriculumLevel('beginner')" class="px-3 py-1.5 rounded-lg text-xs font-bold ${levelData.id === 'beginner' ? 'bg-navy text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'} transition">
+                            المبتدئ (A1-A2)
+                        </button>
+                        <button onclick="switchCurriculumLevel('intermediate')" class="px-3 py-1.5 rounded-lg text-xs font-bold ${levelData.id === 'intermediate' ? 'bg-navy text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'} transition">
+                            المتوسط (B1-B2)
+                        </button>
+                        <button onclick="switchCurriculumLevel('advanced')" class="px-3 py-1.5 rounded-lg text-xs font-bold ${levelData.id === 'advanced' ? 'bg-navy text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'} transition">
+                            المتقدم (C1-C2)
+                        </button>
+                    </div>
+                </div>
+            `;
+            if (window.lucide) lucide.createIcons();
+        }
+
         function renderLessonsTab() {
             const container = document.getElementById('lesson-pills-container');
-            if (!container) return;
+            const detailContainer = document.getElementById('lesson-detail-container');
+            if (!container || !detailContainer) return;
+
+            LESSONS_DATA = getActiveLessons();
+            const lessons = LESSONS_DATA;
+            const levelData = getActiveLevelData();
+
+            // When no lessons have been loaded from PDF yet
+            if (!lessons || lessons.length === 0) {
+                container.innerHTML = `
+                    <div class="px-3.5 py-1.5 rounded-xl bg-teal-50 border border-teal-200 text-teal-800 text-xs font-bold flex items-center gap-2 flex-shrink-0">
+                        <span class="w-2 h-2 rounded-full bg-teal-500 animate-pulse"></span>
+                        <span>بانتظار ملزمة ${levelData.nameAr} (PDF)</span>
+                    </div>
+                `;
+                renderCurriculumAwaitingPdfView(levelData);
+                return;
+            }
 
             // If active lesson is locked for current user, reset to highest unlocked lesson
             if (!isLessonUnlocked(currentLessonId)) {
                 let highestUnlocked = 1;
-                for (let i = 1; i <= 11; i++) {
+                for (let i = 1; i <= lessons.length; i++) {
                     if (isLessonUnlocked(i)) highestUnlocked = i;
                     else break;
                 }
                 currentLessonId = highestUnlocked;
             }
 
-            container.innerHTML = LESSONS_DATA.map(l => {
+            container.innerHTML = lessons.map(l => {
                 const isComp = currentUser && currentUser.completedLessons && currentUser.completedLessons.includes(l.number);
                 const unlocked = isLessonUnlocked(l.number);
 
                 if (unlocked) {
                     const isSelected = l.id === currentLessonId;
                     return `
-                        <button onclick="selectLesson(${l.id})" class="px-3 py-1.5 rounded-lg text-xs font-bold transition flex-shrink-0 flex items-center gap-1 ${isSelected ? 'bg-navy text-white shadow-sm ring-2 ring-navy/30' : isComp ? 'bg-emerald-50 text-emerald-800 border border-emerald-200 hover:bg-emerald-100/60' : 'bg-white text-slate-700 hover:bg-slate-100 border border-slate-200'}">
-                            ${isComp ? '<span class="text-emerald-500 text-[10px]">✓</span>' : ''}
+                        <button onclick="selectLesson(${l.id})" class="px-3.5 py-1.5 rounded-xl text-xs font-bold transition flex-shrink-0 flex items-center gap-1.5 ${isSelected ? 'bg-navy text-white shadow-sm ring-2 ring-navy/30' : isComp ? 'bg-emerald-50 text-emerald-800 border border-emerald-200 hover:bg-emerald-100/60' : 'bg-white text-slate-700 hover:bg-slate-100 border border-slate-200'}">
+                            ${isComp ? '<span class="text-emerald-500 text-[11px] font-black">✓</span>' : ''}
                             <span>L${l.number}</span>
+                            <span class="text-[10px] opacity-75 hidden sm:inline truncate max-w-[90px]">${l.title}</span>
                         </button>
                     `;
                 } else {
                     return `
-                        <button onclick="showLockedLessonAlert(${l.number})" class="px-3 py-1.5 rounded-lg text-xs font-bold transition flex-shrink-0 flex items-center gap-1.5 bg-slate-100 text-slate-400 border border-slate-200 hover:bg-slate-200/80 cursor-not-allowed" title="الدرس ${l.number} مقفل - يجب إتمام الدرس ${l.number - 1} أولاً">
+                        <button onclick="showLockedLessonAlert(${l.number})" class="px-3.5 py-1.5 rounded-xl text-xs font-bold transition flex-shrink-0 flex items-center gap-1.5 bg-slate-100 text-slate-400 border border-slate-200 hover:bg-slate-200/80 cursor-not-allowed" title="الدرس ${l.number} مقفل - يجب إتمام الدرس السابق أولاً">
                             <i data-lucide="lock" class="w-3 h-3 text-slate-400"></i>
                             <span>L${l.number}</span>
                         </button>
@@ -2625,49 +2532,71 @@ USING (bucket_id = 'videos');</pre>
         }
 
         function selectLesson(id) {
+            const lessons = getActiveLessons();
+            if (!lessons || lessons.length === 0) {
+                renderCurriculumAwaitingPdfView(getActiveLevelData());
+                return;
+            }
+
             if (!isLessonUnlocked(id)) {
                 showLockedLessonAlert(id);
                 return;
             }
             currentLessonId = id;
-            const lesson = LESSONS_DATA.find(l => l.id === id) || LESSONS_DATA[0];
+            const lesson = lessons.find(l => l.id === id) || lessons[0];
             const isCompleted = currentUser && currentUser.completedLessons && currentUser.completedLessons.includes(lesson.number);
+            const levelData = getActiveLevelData();
 
+            // Update Lesson Pills
             document.querySelectorAll('#lesson-pills-container button').forEach((btn, idx) => {
-                const lNum = idx + 1;
+                const targetLesson = lessons[idx];
+                if (!targetLesson) return;
+                const lNum = targetLesson.number;
                 const isComp = currentUser && currentUser.completedLessons && currentUser.completedLessons.includes(lNum);
                 const unlocked = isLessonUnlocked(lNum);
 
                 if (!unlocked) {
-                    btn.className = 'px-3 py-1.5 rounded-lg text-xs font-bold transition flex-shrink-0 flex items-center gap-1.5 bg-slate-100 text-slate-400 border border-slate-200 hover:bg-slate-200/80 cursor-not-allowed';
+                    btn.className = 'px-3.5 py-1.5 rounded-xl text-xs font-bold transition flex-shrink-0 flex items-center gap-1.5 bg-slate-100 text-slate-400 border border-slate-200 hover:bg-slate-200/80 cursor-not-allowed';
                     btn.innerHTML = `<i data-lucide="lock" class="w-3 h-3 text-slate-400"></i><span>L${lNum}</span>`;
-                } else if (lNum === id) {
-                    btn.className = 'px-3 py-1.5 rounded-lg text-xs font-bold transition flex-shrink-0 flex items-center gap-1 bg-navy text-white shadow-sm ring-2 ring-navy/30';
-                    btn.innerHTML = `${isComp ? '<span class="text-emerald-400 text-[10px]">✓</span>' : ''}<span>L${lNum}</span>`;
+                } else if (lNum === lesson.number) {
+                    btn.className = 'px-3.5 py-1.5 rounded-xl text-xs font-bold transition flex-shrink-0 flex items-center gap-1.5 bg-navy text-white shadow-sm ring-2 ring-navy/30';
+                    btn.innerHTML = `${isComp ? '<span class="text-emerald-400 text-[11px] font-black">✓</span>' : ''}<span>L${lNum}</span><span class="text-[10px] opacity-75 hidden sm:inline truncate max-w-[90px]">${targetLesson.title}</span>`;
                 } else if (isComp) {
-                    btn.className = 'px-3 py-1.5 rounded-lg text-xs font-bold transition flex-shrink-0 flex items-center gap-1 bg-emerald-50 text-emerald-800 border border-emerald-200 hover:bg-emerald-100/60';
-                    btn.innerHTML = `<span class="text-emerald-500 text-[10px]">✓</span><span>L${lNum}</span>`;
+                    btn.className = 'px-3.5 py-1.5 rounded-xl text-xs font-bold transition flex-shrink-0 flex items-center gap-1.5 bg-emerald-50 text-emerald-800 border border-emerald-200 hover:bg-emerald-100/60';
+                    btn.innerHTML = `<span class="text-emerald-500 text-[11px] font-black">✓</span><span>L${lNum}</span><span class="text-[10px] opacity-75 hidden sm:inline truncate max-w-[90px]">${targetLesson.title}</span>`;
                 } else {
-                    btn.className = 'px-3 py-1.5 rounded-lg text-xs font-bold transition flex-shrink-0 flex items-center gap-1 bg-white text-slate-700 hover:bg-slate-100 border border-slate-200';
-                    btn.innerHTML = `<span>L${lNum}</span>`;
+                    btn.className = 'px-3.5 py-1.5 rounded-xl text-xs font-bold transition flex-shrink-0 flex items-center gap-1.5 bg-white text-slate-700 hover:bg-slate-100 border border-slate-200';
+                    btn.innerHTML = `<span>L${lNum}</span><span class="text-[10px] opacity-75 hidden sm:inline truncate max-w-[90px]">${targetLesson.title}</span>`;
                 }
             });
 
             const detailContainer = document.getElementById('lesson-detail-container');
+            if (!detailContainer) return;
+
+            if (typeof renderLessonIsolatedView === 'function') {
+                detailContainer.innerHTML = renderLessonIsolatedView(lesson, currentUser, lessons, levelData);
+                if (window.lucide) lucide.createIcons();
+                if (typeof updateLessonStatsUI === 'function') {
+                    updateLessonStatsUI(lesson.number);
+                }
+                return;
+            }
+
             detailContainer.innerHTML = `
                 <div class="bg-white p-6 sm:p-8 rounded-3xl border border-slate-200/80 shadow-sm space-y-6">
                     <!-- Lesson Header & Actions -->
                     <div class="border-b border-slate-100 pb-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                         <div>
-                            <div class="flex items-center gap-2">
-                                <span class="text-xs font-extrabold text-teal-DEFAULT bg-teal-50 px-2.5 py-1 rounded-full border border-teal-200">الدرس ${lesson.number} من 11</span>
+                            <div class="flex items-center gap-2 flex-wrap">
+                                <span class="text-xs font-extrabold text-teal-DEFAULT bg-teal-50 px-2.5 py-1 rounded-full border border-teal-200">الدرس ${lesson.number} من ${lessons.length}</span>
+                                <span class="text-xs font-bold bg-navy/5 text-navy px-2.5 py-1 rounded-full border border-navy/10">${levelData.nameAr}</span>
                                 <span class="text-xs font-bold ${isCompleted ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'} px-2.5 py-1 rounded-full flex items-center gap-1">
                                     <i data-lucide="${isCompleted ? 'check-circle' : 'clock'}" class="w-3.5 h-3.5"></i>
                                     <span>${isCompleted ? 'مكتمل ومعتمد في LMS' : 'قيد التدريب'}</span>
                                 </span>
                             </div>
                             <h3 class="text-2xl font-black text-navy mt-2">${lesson.title}</h3>
-                            <h4 class="text-sm font-semibold text-slate-500">${lesson.titleAr}</h4>
+                            <h4 class="text-sm font-semibold text-slate-500">${lesson.titleAr || ''}</h4>
                         </div>
                         <div class="flex items-center gap-2 flex-wrap">
                             <button onclick="toggleLessonCompletion(${lesson.number})" class="px-4 py-2 rounded-xl ${isCompleted ? 'bg-emerald-600 hover:bg-emerald-700 text-white' : 'bg-slate-100 hover:bg-emerald-50 hover:text-emerald-700 text-slate-700 border border-slate-200'} text-xs font-bold transition flex items-center gap-1.5 shadow-sm">
@@ -2693,24 +2622,45 @@ USING (bucket_id = 'videos');</pre>
                                     <span class="px-2 py-0.5 rounded bg-white text-slate-600 text-[10px] font-mono border border-slate-200">${currentUser ? currentUser.id : ''}</span>
                                 </div>
                                 <p class="text-[11px] text-slate-500 mt-0.5">
-                                    ${isCompleted ? 'تم تسجيل حضور واجتياز هذا الدرس بنجاح ومزامنته مع لوحة المشرف LMS.' : 'قم بمشاهدة الفيديو التعليمي، والاستماع للحوارات، ثم اضغط على زر الإتمام لحفظ نسبة إنجازك.'}
+                                    ${isCompleted ? 'تم تسجيل حضور واجتياز هذا الدرس بنجاح ومزامنته مع لوحة المشرف LMS.' : 'قم بمشاهدة الشرح، والاستماع للحوارات، وحل التمارين ثم اضغط على زر الإتمام لحفظ نسبة إنجازك.'}
                                 </p>
                             </div>
                         </div>
                         <div class="text-left flex-shrink-0">
                             <span class="text-[11px] text-slate-400 block">إجمالي إنجاز الموظف:</span>
-                            <span class="text-sm font-black text-navy">${(currentUser && currentUser.completedLessons) ? currentUser.completedLessons.length : 0} / 11 درساً (${Math.round((((currentUser && currentUser.completedLessons) ? currentUser.completedLessons.length : 0) / 11) * 100)}%)</span>
+                            <span class="text-sm font-black text-navy">${(currentUser && currentUser.completedLessons) ? currentUser.completedLessons.length : 0} / ${lessons.length} درساً (${lessons.length > 0 ? Math.round((((currentUser && currentUser.completedLessons) ? currentUser.completedLessons.length : 0) / lessons.length) * 100) : 0}%)</span>
                         </div>
                     </div>
 
-                    <!-- Description -->
-                    <div class="p-4 rounded-xl bg-slate-50 border border-slate-200/80 text-sm text-slate-700 leading-relaxed">
-                        <span class="font-bold text-navy">الهدف التعليمي للدرس: </span>${lesson.description}
-                    </div>
+                    <!-- 1. Objectives & Overview (الأهداف والمخرجات التعليمية) -->
+                    ${(lesson.objectives && lesson.objectives.length > 0) ? `
+                        <div class="p-4 sm:p-5 rounded-2xl bg-teal-50/50 border border-teal-200/80 space-y-3">
+                            <div class="flex items-center justify-between">
+                                <h4 class="text-sm font-extrabold text-navy flex items-center gap-2">
+                                    <i data-lucide="target" class="w-4 h-4 text-teal-DEFAULT"></i>
+                                    <span>الأهداف والمخرجات التعليمية للدرس (Learning Objectives):</span>
+                                </h4>
+                                <span class="text-[11px] font-bold text-teal-800 bg-teal-100/70 px-2 py-0.5 rounded-md">
+                                    ${lesson.objectives.length} مخرجات أساسية
+                                </span>
+                            </div>
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                ${lesson.objectives.map(obj => `
+                                    <div class="flex items-start gap-2 bg-white/80 p-2.5 rounded-xl border border-teal-100 text-xs text-slate-700">
+                                        <i data-lucide="check-circle-2" class="w-3.5 h-3.5 text-teal-600 flex-shrink-0 mt-0.5"></i>
+                                        <span>${obj}</span>
+                                    </div>
+                                `).join('')}
+                            </div>
+                            ${lesson.description ? `<p class="text-xs text-slate-600 pt-1 leading-relaxed"><strong class="text-navy">ملخص الوحدة: </strong>${lesson.description}</p>` : ''}
+                        </div>
+                    ` : (lesson.description ? `
+                        <div class="p-4 rounded-xl bg-slate-50 border border-slate-200/80 text-sm text-slate-700 leading-relaxed">
+                            <span class="font-bold text-navy">الهدف التعليمي للدرس: </span>${lesson.description}
+                        </div>
+                    ` : '')}
 
-                    <!-- ============================================== -->
-                    <!-- MULTIMEDIA HUB: VIDEO & AUDIO PLAYERS -->
-                    <!-- ============================================== -->
+                    <!-- 2. Multimedia Hub: Video & Audio Players -->
                     <div class="space-y-4 pt-1">
                         <div class="flex items-center justify-between">
                             <h4 class="text-base font-bold text-navy flex items-center gap-2">
@@ -2722,9 +2672,9 @@ USING (bucket_id = 'videos');</pre>
                             </span>
                         </div>
 
-                        <!-- 1. Educational Video Player -->
                         ${renderLessonVideoBlock(lesson)}
-                        <!-- 2. Interactive Audio Player (Listening Lab) -->
+
+                        <!-- Interactive Audio Player -->
                         <div class="p-4 sm:p-5 rounded-2xl bg-slate-50 border border-slate-200/80 space-y-3">
                             <div class="flex items-center justify-between flex-wrap gap-2">
                                 <div class="flex items-center gap-2.5">
@@ -2736,7 +2686,6 @@ USING (bucket_id = 'videos');</pre>
                                         <p class="text-[11px] text-slate-500">نطق نقي بلكنة واضحة مع إمكانية إبطاء السرعة للتدريب والترديد</p>
                                     </div>
                                 </div>
-                                <!-- Audio Speed Buttons -->
                                 <div class="flex items-center gap-1.5 bg-white p-1 rounded-xl border border-slate-200">
                                     <span class="text-[10px] text-slate-400 px-1 font-bold">سرعة الصوت:</span>
                                     <button onclick="setGlobalAudioSpeed(0.75)" id="aspeed-075" class="px-2 py-0.5 rounded-lg text-xs font-bold text-slate-600 hover:bg-slate-100 transition">0.75x</button>
@@ -2745,7 +2694,6 @@ USING (bucket_id = 'videos');</pre>
                                 </div>
                             </div>
 
-                            <!-- Audio Bar Controls -->
                             <div class="p-3.5 rounded-xl bg-white border border-slate-200 flex items-center gap-3">
                                 <button onclick="toggleAudioLessonNarrative(${lesson.number})" id="audio-play-btn-${lesson.number}" class="w-10 h-10 rounded-xl bg-teal-DEFAULT hover:bg-teal-light text-white flex items-center justify-center shadow-sm flex-shrink-0 transition">
                                     <i data-lucide="play" id="audio-play-icon-${lesson.number}" class="w-5 h-5 ml-0.5"></i>
@@ -2766,43 +2714,60 @@ USING (bucket_id = 'videos');</pre>
                         </div>
                     </div>
 
-                    <!-- Readings -->
-                    ${lesson.readings.map(r => `
-                        <div class="space-y-3">
-                            <div class="flex items-center justify-between">
+                    <!-- 3. Readings (نصوص القراءة والفهم) -->
+                    ${(lesson.readings && lesson.readings.length > 0) ? lesson.readings.map(r => `
+                        <div class="space-y-3 pt-2">
+                            <div class="flex items-center justify-between flex-wrap gap-2">
                                 <h4 class="text-base font-bold text-navy flex items-center gap-2">
                                     <i data-lucide="book-open" class="w-4 h-4 text-teal-DEFAULT"></i>
                                     <span>${r.title}</span>
+                                    ${r.titleAr ? `<span class="text-xs font-normal text-slate-500">(${r.titleAr})</span>` : ''}
                                 </h4>
-                                <button onclick="speakText('${r.text.replace(/'/g, "\\'").replace(/\n/g, ' ')}')" class="px-3 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 text-xs font-bold text-slate-700 flex items-center gap-1.5 transition">
+                                <button onclick="speakText('${(r.text || '').replace(/'/g, "\\'").replace(/\n/g, ' ')}')" class="px-3 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 text-xs font-bold text-slate-700 flex items-center gap-1.5 transition">
                                     <i data-lucide="volume-2" class="w-3.5 h-3.5 text-teal-DEFAULT"></i> استمع للنص كاملاً
                                 </button>
                             </div>
                             <div class="p-5 rounded-2xl bg-white border border-slate-200 text-slate-800 text-sm en-font leading-relaxed whitespace-pre-line ltr-text" dir="ltr">
                                 ${r.text}
                             </div>
+                            ${(r.arabicSummary || r.summary) ? `
+                                <div class="p-3.5 rounded-xl bg-slate-50 border border-slate-200/80 text-xs text-slate-700 leading-relaxed">
+                                    <strong class="text-teal-800">💡 خلاصة وترجمة الفكرة الأساسية: </strong>${r.arabicSummary || r.summary}
+                                </div>
+                            ` : ''}
                         </div>
-                    `).join('')}
+                    `).join('') : ''}
 
-                    <!-- Dialogues -->
-                    ${lesson.dialogues.length > 0 ? `
+                    <!-- 4. Dialogues (حوارات المحادثة العملية) -->
+                    ${(lesson.dialogues && lesson.dialogues.length > 0) ? `
                         <div class="space-y-3 pt-2">
                             <h4 class="text-base font-bold text-navy flex items-center gap-2">
                                 <i data-lucide="message-square" class="w-4 h-4 text-purple-600"></i>
                                 <span>حوارات المحادثة العملية (Speaking Dialogues)</span>
                             </h4>
-                            <div class="space-y-2.5">
+                            <div class="space-y-3">
                                 ${lesson.dialogues.map(d => `
-                                    <div class="p-4 rounded-xl bg-slate-50 border border-slate-200 text-xs sm:text-sm en-font space-y-2 ltr-text" dir="ltr">
-                                        <div class="flex items-start gap-2">
-                                            <span class="font-extrabold text-teal-700">${d.speakerA}:</span>
-                                            <span class="text-slate-800">${d.textA}</span>
-                                            <button onclick="speakText('${d.textA.replace(/'/g, "\\'")}')" class="p-1 text-slate-400 hover:text-teal-DEFAULT"><i data-lucide="volume-1" class="w-3.5 h-3.5"></i></button>
-                                        </div>
-                                        <div class="flex items-start gap-2">
-                                            <span class="font-extrabold text-purple-700">${d.speakerB}:</span>
-                                            <span class="text-slate-800">${d.textB}</span>
-                                            <button onclick="speakText('${d.textB.replace(/'/g, "\\'")}')" class="p-1 text-slate-400 hover:text-teal-DEFAULT"><i data-lucide="volume-1" class="w-3.5 h-3.5"></i></button>
+                                    <div class="p-4 sm:p-5 rounded-2xl bg-slate-50 border border-slate-200 text-xs sm:text-sm en-font space-y-3">
+                                        ${d.context ? `<div class="text-[11px] font-bold text-slate-500 bg-white px-2.5 py-1 rounded-lg border border-slate-200 inline-block">سياق المحادثة: ${d.context}</div>` : ''}
+                                        <div class="space-y-2.5 ltr-text" dir="ltr">
+                                            <div class="flex items-start gap-2.5 bg-white p-3 rounded-xl border border-slate-200">
+                                                <div class="w-7 h-7 rounded-lg bg-teal-100 text-teal-800 font-extrabold flex items-center justify-center text-xs flex-shrink-0">A</div>
+                                                <div class="flex-1">
+                                                    <span class="font-extrabold text-teal-800 block text-xs">${d.speakerA || 'Speaker A'}:</span>
+                                                    <span class="text-slate-800">${d.textA || ''}</span>
+                                                    ${d.translationA ? `<p class="text-[11px] text-slate-500 mt-0.5" dir="rtl">${d.translationA}</p>` : ''}
+                                                </div>
+                                                <button type="button" onclick="speakFromAttr(this)" data-speak="${(d.textA || '').replace(/"/g, '&quot;')}" class="p-1.5 text-slate-400 hover:text-teal-DEFAULT rounded-lg hover:bg-slate-100 transition"><i data-lucide="volume-1" class="w-4 h-4"></i></button>
+                                            </div>
+                                            <div class="flex items-start gap-2.5 bg-white p-3 rounded-xl border border-slate-200">
+                                                <div class="w-7 h-7 rounded-lg bg-purple-100 text-purple-800 font-extrabold flex items-center justify-center text-xs flex-shrink-0">B</div>
+                                                <div class="flex-1">
+                                                    <span class="font-extrabold text-purple-800 block text-xs">${d.speakerB || 'Speaker B'}:</span>
+                                                    <span class="text-slate-800">${d.textB || ''}</span>
+                                                    ${d.translationB ? `<p class="text-[11px] text-slate-500 mt-0.5" dir="rtl">${d.translationB}</p>` : ''}
+                                                </div>
+                                                <button type="button" onclick="speakFromAttr(this)" data-speak="${(d.textB || '').replace(/"/g, '&quot;')}" class="p-1.5 text-slate-400 hover:text-purple-600 rounded-lg hover:bg-slate-100 transition"><i data-lucide="volume-1" class="w-4 h-4"></i></button>
+                                            </div>
                                         </div>
                                     </div>
                                 `).join('')}
@@ -2810,21 +2775,293 @@ USING (bucket_id = 'videos');</pre>
                         </div>
                     ` : ''}
 
-                    <!-- Useful Expressions -->
-                    <div class="space-y-3 pt-2">
-                        <h4 class="text-base font-bold text-navy flex items-center gap-2">
-                            <i data-lucide="star" class="w-4 h-4 text-gold"></i>
-                            <span>تعابير وجمل أساسية للمحادثة والكتابة:</span>
-                        </h4>
-                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                            ${lesson.expressions.map(exp => `
-                                <div class="p-3.5 rounded-xl bg-white border border-slate-200 text-xs sm:text-sm en-font flex items-center justify-between ltr-text" dir="ltr">
-                                    <span class="text-slate-800 font-medium">${exp}</span>
-                                    <button onclick="speakText('${exp.replace(/'/g, "\\'")}')" class="p-1 text-teal-DEFAULT hover:text-teal-dark"><i data-lucide="volume-2" class="w-4 h-4"></i></button>
-                                </div>
-                            `).join('')}
+                    <!-- 5. Detailed Grammar Mastery (شرح القواعد بالتفصيل) -->
+                    ${(lesson.grammarDetails && lesson.grammarDetails.length > 0) ? `
+                        <div class="space-y-4 pt-2">
+                            <h4 class="text-base font-bold text-navy flex items-center gap-2">
+                                <i data-lucide="compass" class="w-4 h-4 text-amber-600"></i>
+                                <span>شرح القواعد بالتفصيل (Detailed Grammar Mastery)</span>
+                            </h4>
+                            <div class="space-y-4">
+                                ${lesson.grammarDetails.map((g, gIdx) => `
+                                    <div class="p-5 sm:p-6 rounded-2xl bg-amber-50/40 border border-amber-200/90 space-y-4">
+                                        <div class="flex items-center justify-between border-b border-amber-200/60 pb-3">
+                                            <h5 class="text-sm font-black text-navy flex items-center gap-2">
+                                                <span class="w-6 h-6 rounded-lg bg-amber-500 text-white text-xs font-bold flex items-center justify-center">${gIdx + 1}</span>
+                                                <span>${g.title}</span>
+                                                ${g.titleAr ? `<span class="text-xs text-slate-500 font-normal">(${g.titleAr})</span>` : ''}
+                                            </h5>
+                                            <span class="text-[10px] font-bold text-amber-800 bg-amber-100 px-2 py-0.5 rounded-full">شرح وتطبيق</span>
+                                        </div>
+
+                                        <!-- Explanation -->
+                                        ${g.explanation ? `<p class="text-xs sm:text-sm text-slate-700 leading-relaxed">${g.explanation}</p>` : ''}
+
+                                        <!-- Formula / Rule Structure -->
+                                        ${g.formula ? `
+                                            <div class="p-3.5 rounded-xl bg-white border border-amber-200 text-xs sm:text-sm font-mono ltr-text text-amber-900 font-bold flex items-center gap-2" dir="ltr">
+                                                <i data-lucide="code" class="w-4 h-4 text-amber-600 flex-shrink-0"></i>
+                                                <span>${g.formula}</span>
+                                            </div>
+                                        ` : ''}
+
+                                        <!-- Comparison Table if provided -->
+                                        ${(g.comparisonTable && g.comparisonTable.length > 0) ? `
+                                            <div class="overflow-x-auto rounded-xl border border-amber-200 bg-white">
+                                                <table class="w-full text-xs text-right">
+                                                    <thead class="bg-amber-100/60 text-navy font-bold">
+                                                        <tr>
+                                                            <th class="p-2.5">الحالة / الاستخدام</th>
+                                                            <th class="p-2.5 ltr-text" dir="ltr">English Pattern</th>
+                                                            <th class="p-2.5">المعنى بالعربية</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody class="divide-y divide-amber-100">
+                                                        ${g.comparisonTable.map(row => `
+                                                            <tr class="hover:bg-amber-50/40">
+                                                                <td class="p-2.5 font-bold text-navy">${row.situation || row.col1 || ''}</td>
+                                                                <td class="p-2.5 font-mono text-slate-800 ltr-text" dir="ltr">${row.english || row.col2 || ''}</td>
+                                                                <td class="p-2.5 text-slate-600">${row.arabic || row.col3 || ''}</td>
+                                                            </tr>
+                                                        `).join('')}
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        ` : ''}
+
+                                        <!-- Examples -->
+                                        ${(g.examples && g.examples.length > 0) ? `
+                                            <div class="space-y-2">
+                                                <span class="text-xs font-bold text-navy block">أمثلة تطبيقية (Examples):</span>
+                                                <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                                    ${g.examples.map(ex => `
+                                                        <div class="p-3 rounded-xl bg-white border border-amber-200/80 text-xs space-y-1">
+                                                            <div class="flex items-center justify-between ltr-text font-bold text-slate-800" dir="ltr">
+                                                                <span>${ex.en}</span>
+                                                                <button type="button" onclick="speakFromAttr(this)" data-speak="${(ex.en || '').replace(/"/g, '&quot;')}" class="p-1 text-amber-600 hover:text-amber-800"><i data-lucide="volume-1" class="w-3.5 h-3.5"></i></button>
+                                                            </div>
+                                                            <p class="text-slate-600 text-[11px]">${ex.ar}</p>
+                                                            ${ex.note ? `<p class="text-[10px] text-amber-700 italic font-medium">ملاحظة: ${ex.note}</p>` : ''}
+                                                        </div>
+                                                    `).join('')}
+                                                </div>
+                                            </div>
+                                        ` : ''}
+
+                                        <!-- Common Mistakes -->
+                                        ${(g.commonMistakes && g.commonMistakes.length > 0) ? `
+                                            <div class="p-3.5 rounded-xl bg-white border border-rose-200 space-y-2">
+                                                <span class="text-xs font-bold text-rose-700 flex items-center gap-1.5">
+                                                    <i data-lucide="alert-triangle" class="w-3.5 h-3.5"></i> تجنب هذه الأخطاء الشائعة (Common Mistakes):
+                                                </span>
+                                                <div class="space-y-2">
+                                                    ${g.commonMistakes.map(m => `
+                                                        <div class="text-xs space-y-1 border-b border-slate-100 pb-1.5 last:border-0 last:pb-0">
+                                                            <div class="flex items-center gap-2 flex-wrap font-mono text-[11px] ltr-text" dir="ltr">
+                                                                <span class="text-rose-600 line-through">❌ ${m.incorrect}</span>
+                                                                <span class="text-emerald-700 font-bold">✅ ${m.correct}</span>
+                                                            </div>
+                                                            ${m.explanation ? `<p class="text-[11px] text-slate-600">${m.explanation}</p>` : ''}
+                                                        </div>
+                                                    `).join('')}
+                                                </div>
+                                            </div>
+                                        ` : ''}
+                                    </div>
+                                `).join('')}
+                            </div>
                         </div>
-                    </div>
+                    ` : ''}
+
+                    <!-- 6. Vocabulary & Core Expressions (المفردات والتعابير) -->
+                    ${(lesson.vocabulary && lesson.vocabulary.length > 0) ? `
+                        <div class="space-y-3 pt-2">
+                            <div class="flex items-center justify-between">
+                                <h4 class="text-base font-bold text-navy flex items-center gap-2">
+                                    <i data-lucide="bookmark" class="w-4 h-4 text-emerald-600"></i>
+                                    <span>المفردات التخصصية والمهنية (Key Vocabulary)</span>
+                                </h4>
+                                <span class="text-xs font-bold text-emerald-800 bg-emerald-50 border border-emerald-200 px-2.5 py-0.5 rounded-full">
+                                    ${lesson.vocabulary.length} مفردات أساسية
+                                </span>
+                            </div>
+                            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                                ${lesson.vocabulary.map(v => `
+                                    <div class="p-3.5 rounded-xl bg-white border border-slate-200 shadow-xs space-y-2 hover:border-emerald-300 transition">
+                                        <div class="flex items-center justify-between ltr-text" dir="ltr">
+                                            <div>
+                                                <span class="text-sm font-extrabold text-navy">${v.word}</span>
+                                                ${v.phonetic ? `<span class="text-[10px] text-slate-400 font-mono ml-1">${v.phonetic}</span>` : ''}
+                                            </div>
+                                            <button type="button" onclick="speakFromAttr(this)" data-speak="${(v.word || '').replace(/"/g, '&quot;')}" class="p-1 text-emerald-600 hover:text-emerald-700"><i data-lucide="volume-2" class="w-3.5 h-3.5"></i></button>
+                                        </div>
+                                        <div class="flex items-center gap-1.5 flex-wrap">
+                                            ${v.partOfSpeech ? `<span class="text-[10px] px-2 py-0.5 rounded bg-slate-100 text-slate-600 font-mono">${v.partOfSpeech}</span>` : ''}
+                                            <span class="text-xs font-bold text-emerald-800">${v.meaningAr || v.meaning || ''}</span>
+                                        </div>
+                                        ${(v.exampleEn || v.example) ? `
+                                            <div class="text-[11px] text-slate-600 bg-slate-50 p-2 rounded-lg ltr-text" dir="ltr">
+                                                "${v.exampleEn || v.example}"
+                                            </div>
+                                        ` : ''}
+                                    </div>
+                                `).join('')}
+                            </div>
+                        </div>
+                    ` : ''}
+
+                    <!-- Useful Expressions -->
+                    ${(lesson.expressions && lesson.expressions.length > 0) ? `
+                        <div class="space-y-3 pt-2">
+                            <h4 class="text-base font-bold text-navy flex items-center gap-2">
+                                <i data-lucide="star" class="w-4 h-4 text-gold"></i>
+                                <span>تعابير وجمل أساسية للمحادثة والكتابة:</span>
+                            </h4>
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                                ${lesson.expressions.map(exp => `
+                                    <div class="p-3.5 rounded-xl bg-white border border-slate-200 text-xs sm:text-sm en-font flex items-center justify-between ltr-text hover:border-teal-300 transition" dir="ltr">
+                                        <span class="text-slate-800 font-medium">${exp}</span>
+                                        <button type="button" onclick="speakFromAttr(this)" data-speak="${exp.replace(/"/g, '&quot;')}" class="p-1 text-teal-DEFAULT hover:text-teal-dark"><i data-lucide="volume-2" class="w-4 h-4"></i></button>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        </div>
+                    ` : ''}
+
+                    <!-- 7. Interactive Exercises & Drills (التمارين والأسئلة التفاعلية) -->
+                    ${(lesson.exercises && lesson.exercises.length > 0) ? `
+                        <div class="space-y-4 pt-3 border-t border-slate-200">
+                            <div class="flex items-center justify-between">
+                                <h4 class="text-base font-black text-navy flex items-center gap-2">
+                                    <i data-lucide="check-square" class="w-5 h-5 text-teal-DEFAULT"></i>
+                                    <span>التمارين والأسئلة التفاعلية الشاملة (Exercises & Drills)</span>
+                                </h4>
+                                <span class="text-xs font-bold text-teal-800 bg-teal-50 border border-teal-200 px-3 py-1 rounded-full">
+                                    ${lesson.exercises.length} أسئلة للتقييم الفوري
+                                </span>
+                            </div>
+
+                            <div class="space-y-3.5">
+                                ${lesson.exercises.map((ex, exIdx) => {
+                                    const exId = ex.id || `ex-${lesson.number}-${exIdx}`;
+                                    if (ex.type === 'mcq') {
+                                        return `
+                                            <div id="ex-card-${exId}" class="p-5 rounded-2xl bg-slate-50 border border-slate-200 space-y-3">
+                                                <div class="flex items-start gap-2.5">
+                                                    <span class="w-6 h-6 rounded-full bg-navy text-white text-xs font-bold flex items-center justify-center flex-shrink-0">${exIdx + 1}</span>
+                                                    <div class="flex-1">
+                                                        <h5 class="text-xs sm:text-sm font-bold text-navy en-font ltr-text" dir="ltr">${ex.question}</h5>
+                                                        ${ex.questionAr ? `<p class="text-[11px] text-slate-500 mt-0.5">${ex.questionAr}</p>` : ''}
+                                                    </div>
+                                                </div>
+                                                <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 mr-8">
+                                                    ${(ex.options || []).map(opt => `
+                                                        <button type="button" data-option="${opt.replace(/"/g, '&quot;')}" onclick="handleExerciseOptionSelect(${lesson.number}, '${exId}', '${opt.replace(/'/g, "\\'")}', '${(ex.correctAnswer || '').replace(/'/g, "\\'")}', '${(ex.explanation || '').replace(/'/g, "\\'")}')" class="ex-mcq-option p-3 rounded-xl border border-slate-200 bg-white hover:border-teal-DEFAULT text-slate-800 font-medium text-xs text-left ltr-text transition flex items-center justify-between" dir="ltr">
+                                                            <span>${opt}</span>
+                                                            <i data-lucide="circle" class="w-3.5 h-3.5 text-slate-300"></i>
+                                                        </button>
+                                                    `).join('')}
+                                                </div>
+                                                <div id="ex-feedback-${exId}" class="hidden mr-8"></div>
+                                            </div>
+                                        `;
+                                    } else if (ex.type === 'fill_blank') {
+                                        const acceptableStr = JSON.stringify(ex.acceptableAnswers || [ex.correctAnswer]);
+                                        return `
+                                            <div id="ex-card-${exId}" class="p-5 rounded-2xl bg-slate-50 border border-slate-200 space-y-3">
+                                                <div class="flex items-start gap-2.5">
+                                                    <span class="w-6 h-6 rounded-full bg-navy text-white text-xs font-bold flex items-center justify-center flex-shrink-0">${exIdx + 1}</span>
+                                                    <div class="flex-1">
+                                                        <h5 class="text-xs sm:text-sm font-bold text-navy en-font ltr-text" dir="ltr">${ex.question}</h5>
+                                                        ${ex.questionAr ? `<p class="text-[11px] text-slate-500 mt-0.5">${ex.questionAr}</p>` : ''}
+                                                    </div>
+                                                </div>
+                                                <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 mr-8">
+                                                    <input type="text" id="input-${exId}" placeholder="اكتب الكلمة المناسبة هنا..." class="flex-1 px-4 py-2.5 rounded-xl border border-slate-300 text-xs text-navy outline-none focus:border-teal-DEFAULT bg-white font-mono ltr-text" dir="ltr" onkeydown="if(event.key==='Enter') checkFillBlankAnswer(${lesson.number}, '${exId}', 'input-${exId}', '${acceptableStr.replace(/'/g, "\\'")}', '${(ex.explanation || '').replace(/'/g, "\\'")}')">
+                                                    <button type="button" onclick="checkFillBlankAnswer(${lesson.number}, '${exId}', 'input-${exId}', '${acceptableStr.replace(/'/g, "\\'")}', '${(ex.explanation || '').replace(/'/g, "\\'")}')" class="px-4 py-2.5 rounded-xl bg-teal-DEFAULT hover:bg-teal-light text-white text-xs font-bold transition flex items-center justify-center gap-1.5 shadow-xs">
+                                                        <i data-lucide="check" class="w-4 h-4"></i> تحقق
+                                                    </button>
+                                                </div>
+                                                <div id="ex-feedback-${exId}" class="hidden mr-8"></div>
+                                            </div>
+                                        `;
+                                    } else {
+                                        return `
+                                            <div id="ex-card-${exId}" class="p-5 rounded-2xl bg-slate-50 border border-slate-200 space-y-3">
+                                                <div class="flex items-start gap-2.5">
+                                                    <span class="w-6 h-6 rounded-full bg-navy text-white text-xs font-bold flex items-center justify-center flex-shrink-0">${exIdx + 1}</span>
+                                                    <div class="flex-1">
+                                                        <h5 class="text-xs sm:text-sm font-bold text-navy en-font ltr-text" dir="ltr">${ex.question}</h5>
+                                                    </div>
+                                                </div>
+                                                <div class="flex items-center gap-2 mr-8">
+                                                    <button type="button" data-val="true" onclick="checkTrueFalseAnswer(${lesson.number}, '${exId}', true, ${ex.correctAnswer}, '${(ex.explanation || '').replace(/'/g, "\\'")}')" class="ex-tf-btn px-4 py-2 rounded-xl border border-slate-200 bg-white hover:border-emerald-500 text-slate-800 text-xs font-bold transition flex items-center gap-1.5">
+                                                        <i data-lucide="check" class="w-3.5 h-3.5 text-emerald-600"></i> True (صحيح)
+                                                    </button>
+                                                    <button type="button" data-val="false" onclick="checkTrueFalseAnswer(${lesson.number}, '${exId}', false, ${ex.correctAnswer}, '${(ex.explanation || '').replace(/'/g, "\\'")}')" class="ex-tf-btn px-4 py-2 rounded-xl border border-slate-200 bg-white hover:border-rose-500 text-slate-800 text-xs font-bold transition flex items-center gap-1.5">
+                                                        <i data-lucide="x" class="w-3.5 h-3.5 text-rose-600"></i> False (خطأ)
+                                                    </button>
+                                                </div>
+                                                <div id="ex-feedback-${exId}" class="hidden mr-8"></div>
+                                            </div>
+                                        `;
+                                    }
+                                }).join('')}
+                            </div>
+                        </div>
+                    ` : ''}
+
+                    <!-- 8. Practical Writing Task (مهمة الكتابة مع نموذج الإجابة) -->
+                    ${(lesson.writingTask || lesson.writingSpec) ? `
+                        <div class="p-5 sm:p-6 rounded-2xl bg-cyan-50/50 border border-cyan-200/90 space-y-4">
+                            <div class="flex items-center justify-between flex-wrap gap-2">
+                                <h4 class="text-sm sm:text-base font-black text-navy flex items-center gap-2">
+                                    <i data-lucide="edit-3" class="w-5 h-5 text-cyan-700"></i>
+                                    <span>مهمة الكتابة التطبيقية (Practical Writing Task)</span>
+                                </h4>
+                                <button onclick="jumpToWritingForLesson(${lesson.number})" class="px-3.5 py-1.5 rounded-xl bg-cyan-700 hover:bg-cyan-800 text-white text-xs font-bold transition flex items-center gap-1.5 shadow-xs">
+                                    <span>فتح ورشة Gemini الذكية</span>
+                                    <i data-lucide="sparkles" class="w-3.5 h-3.5 text-cyan-200"></i>
+                                </button>
+                            </div>
+                            <div class="p-4 rounded-xl bg-white border border-cyan-200 space-y-2">
+                                <p class="text-xs sm:text-sm font-semibold text-slate-800 en-font ltr-text" dir="ltr">
+                                    ${(lesson.writingTask && lesson.writingTask.prompt) || (lesson.writingSpec && lesson.writingSpec.prompt) || ''}
+                                </p>
+                                ${lesson.writingTask && lesson.writingTask.promptAr ? `<p class="text-xs text-slate-600">${lesson.writingTask.promptAr}</p>` : ''}
+                            </div>
+                            ${(lesson.writingTask && lesson.writingTask.modelAnswer) ? `
+                                <div>
+                                    <button type="button" id="btn-model-ans-w${lesson.number}" onclick="toggleModelAnswer('w${lesson.number}')" class="text-xs font-bold text-cyan-800 hover:text-cyan-950 flex items-center gap-1">
+                                        <i data-lucide="eye" class="w-3.5 h-3.5"></i> عرض نموذج الإجابة الاسترشادي (Model Answer)
+                                    </button>
+                                    <div id="model-ans-w${lesson.number}" class="hidden mt-2 p-4 rounded-xl bg-white border border-cyan-200 text-xs en-font text-slate-800 leading-relaxed whitespace-pre-line ltr-text" dir="ltr">
+                                        ${lesson.writingTask.modelAnswer}
+                                    </div>
+                                </div>
+                            ` : ''}
+                        </div>
+                    ` : ''}
+
+                    <!-- 9. Speaking Practice Task (مهمة التحدث الصوتي) -->
+                    ${lesson.speakingTask ? `
+                        <div class="p-5 sm:p-6 rounded-2xl bg-purple-50/50 border border-purple-200/90 space-y-3">
+                            <div class="flex items-center justify-between flex-wrap gap-2">
+                                <h4 class="text-sm sm:text-base font-black text-navy flex items-center gap-2">
+                                    <i data-lucide="mic" class="w-5 h-5 text-purple-700"></i>
+                                    <span>مهمة التحدث والتسجيل الصوتي (Speaking Practice Task)</span>
+                                </h4>
+                                <button onclick="switchTab('speaking')" class="px-3.5 py-1.5 rounded-xl bg-purple-700 hover:bg-purple-800 text-white text-xs font-bold transition flex items-center gap-1.5 shadow-xs">
+                                    <span>بدء التحدث الصوتي</span>
+                                    <i data-lucide="headphones" class="w-3.5 h-3.5"></i>
+                                </button>
+                            </div>
+                            <div class="p-3.5 rounded-xl bg-white border border-purple-200 text-xs sm:text-sm text-slate-800">
+                                <p class="font-semibold">${lesson.speakingTask.prompt || ''}</p>
+                                ${lesson.speakingTask.promptAr ? `<p class="text-xs text-slate-500 mt-1">${lesson.speakingTask.promptAr}</p>` : ''}
+                            </div>
+                        </div>
+                    ` : ''}
 
                     <!-- Sequential Lesson Bottom Navigation & Completion Bar -->
                     <div class="pt-6 border-t border-slate-200/80 flex flex-col sm:flex-row items-center justify-between gap-4">
@@ -2843,7 +3080,7 @@ USING (bucket_id = 'videos');</pre>
                                 </button>
                             ` : ''}
 
-                            ${lesson.number < 11 ? (
+                            ${lesson.number < lessons.length ? (
                                 isLessonUnlocked(lesson.number + 1) ? `
                                     <button onclick="selectLesson(${lesson.number + 1})" class="px-5 py-2.5 rounded-xl bg-teal-DEFAULT hover:bg-teal-light text-white text-xs font-bold transition flex items-center gap-1.5 shadow-sm">
                                         <span>الانتقال للدرس التالي (L${lesson.number + 1})</span>
@@ -2865,7 +3102,115 @@ USING (bucket_id = 'videos');</pre>
                     </div>
                 </div>
             `;
-            lucide.createIcons();
+            if (window.lucide) lucide.createIcons();
+        }
+
+        // ==========================================
+        // EXERCISE INTERACTION HANDLERS
+        // ==========================================
+        function handleExerciseOptionSelect(lessonId, exId, selectedOpt, correctOpt, explanation) {
+            const card = document.getElementById(`ex-card-${exId}`);
+            if (!card) return;
+            const isCorrect = String(selectedOpt).trim() === String(correctOpt).trim();
+
+            card.querySelectorAll('.ex-mcq-option').forEach(btn => {
+                const val = btn.getAttribute('data-option');
+                if (val === correctOpt) {
+                    btn.className = 'ex-mcq-option p-3 rounded-xl border-2 border-emerald-500 bg-emerald-50 text-emerald-900 font-bold flex items-center justify-between text-xs transition';
+                } else if (val === selectedOpt && !isCorrect) {
+                    btn.className = 'ex-mcq-option p-3 rounded-xl border-2 border-rose-500 bg-rose-50 text-rose-900 font-bold flex items-center justify-between text-xs transition';
+                } else {
+                    btn.className = 'ex-mcq-option p-3 rounded-xl border border-slate-200 bg-white text-slate-700 opacity-60 text-xs transition flex items-center justify-between';
+                }
+            });
+
+            const fb = document.getElementById(`ex-feedback-${exId}`);
+            if (fb) {
+                fb.classList.remove('hidden');
+                fb.className = `p-3.5 rounded-xl border text-xs leading-relaxed space-y-1 ${isCorrect ? 'bg-emerald-50/90 border-emerald-200 text-emerald-900' : 'bg-rose-50/90 border-rose-200 text-rose-900'}`;
+                fb.innerHTML = `
+                    <div class="font-black flex items-center gap-1.5">
+                        <i data-lucide="${isCorrect ? 'check-circle' : 'alert-circle'}" class="w-4 h-4"></i>
+                        <span>${isCorrect ? 'إجابة صحيحة وممتازة! 🎉' : 'إجابة غير صحيحة، راجع التعليل التالي:'}</span>
+                    </div>
+                    ${explanation ? `<p class="text-[11px] opacity-90">${explanation}</p>` : ''}
+                `;
+                if (window.lucide) lucide.createIcons();
+            }
+        }
+
+        function checkFillBlankAnswer(lessonId, exId, inputId, acceptableAnswersJson, explanation) {
+            const input = document.getElementById(inputId);
+            if (!input) return;
+            const userVal = input.value.trim().toLowerCase();
+            let acceptable = [];
+            try {
+                acceptable = typeof acceptableAnswersJson === 'string' ? JSON.parse(acceptableAnswersJson) : acceptableAnswersJson;
+            } catch(e) {
+                acceptable = [String(acceptableAnswersJson).toLowerCase()];
+            }
+            const isCorrect = acceptable.some(ans => String(ans).toLowerCase().trim() === userVal);
+
+            input.className = `flex-1 px-4 py-2.5 rounded-xl border-2 text-xs font-mono ltr-text outline-none transition ${isCorrect ? 'border-emerald-500 bg-emerald-50 text-emerald-900' : 'border-rose-500 bg-rose-50 text-rose-900'}`;
+
+            const fb = document.getElementById(`ex-feedback-${exId}`);
+            if (fb) {
+                fb.classList.remove('hidden');
+                fb.className = `p-3.5 rounded-xl border text-xs leading-relaxed space-y-1 ${isCorrect ? 'bg-emerald-50/90 border-emerald-200 text-emerald-900' : 'bg-rose-50/90 border-rose-200 text-rose-900'}`;
+                fb.innerHTML = `
+                    <div class="font-black flex items-center gap-1.5">
+                        <i data-lucide="${isCorrect ? 'check-circle' : 'alert-circle'}" class="w-4 h-4"></i>
+                        <span>${isCorrect ? 'إجابة صحيحة تماماً! أحسنت 👏' : `الإجابة المقبولة: (${acceptable.join(' أو ')})`}</span>
+                    </div>
+                    ${explanation ? `<p class="text-[11px] opacity-90">${explanation}</p>` : ''}
+                `;
+                if (window.lucide) lucide.createIcons();
+            }
+        }
+
+        function checkTrueFalseAnswer(lessonId, exId, selectedVal, correctVal, explanation) {
+            const card = document.getElementById(`ex-card-${exId}`);
+            if (!card) return;
+            const isCorrect = (selectedVal === correctVal) || (String(selectedVal) === String(correctVal));
+
+            card.querySelectorAll('.ex-tf-btn').forEach(btn => {
+                const val = btn.getAttribute('data-val') === 'true';
+                if (val === correctVal) {
+                    btn.className = 'ex-tf-btn px-4 py-2 rounded-xl border-2 border-emerald-500 bg-emerald-50 text-emerald-900 font-bold text-xs flex items-center gap-1.5';
+                } else if (val === selectedVal && !isCorrect) {
+                    btn.className = 'ex-tf-btn px-4 py-2 rounded-xl border-2 border-rose-500 bg-rose-50 text-rose-900 font-bold text-xs flex items-center gap-1.5';
+                } else {
+                    btn.className = 'ex-tf-btn px-4 py-2 rounded-xl border border-slate-200 bg-white text-slate-700 opacity-60 text-xs flex items-center gap-1.5';
+                }
+            });
+
+            const fb = document.getElementById(`ex-feedback-${exId}`);
+            if (fb) {
+                fb.classList.remove('hidden');
+                fb.className = `p-3.5 rounded-xl border text-xs leading-relaxed space-y-1 ${isCorrect ? 'bg-emerald-50/90 border-emerald-200 text-emerald-900' : 'bg-rose-50/90 border-rose-200 text-rose-900'}`;
+                fb.innerHTML = `
+                    <div class="font-black flex items-center gap-1.5">
+                        <i data-lucide="${isCorrect ? 'check-circle' : 'alert-circle'}" class="w-4 h-4"></i>
+                        <span>${isCorrect ? 'إجابة صحيحة وموفقة! ✨' : 'إجابة غير صحيحة، يرجى مراجعة التوضيح:'}</span>
+                    </div>
+                    ${explanation ? `<p class="text-[11px] opacity-90">${explanation}</p>` : ''}
+                `;
+                if (window.lucide) lucide.createIcons();
+            }
+        }
+
+        function toggleModelAnswer(exId) {
+            const box = document.getElementById(`model-ans-${exId}`);
+            const btn = document.getElementById(`btn-model-ans-${exId}`);
+            if (!box) return;
+            if (box.classList.contains('hidden')) {
+                box.classList.remove('hidden');
+                if (btn) btn.innerHTML = `<i data-lucide="eye-off" class="w-3.5 h-3.5"></i> إخفاء نموذج الإجابة`;
+            } else {
+                box.classList.add('hidden');
+                if (btn) btn.innerHTML = `<i data-lucide="eye" class="w-3.5 h-3.5"></i> عرض نموذج الإجابة الاسترشادي`;
+            }
+            if (window.lucide) lucide.createIcons();
         }
 
         function jumpToWritingForLesson(lessonNum) {
@@ -2877,51 +3222,104 @@ USING (bucket_id = 'videos');</pre>
         // 5. AI WRITING WORKSHOP (ONLINE GEMINI CALL)
         // ==========================================
         function renderWritingTab() {
+            LESSONS_DATA = getActiveLessons();
+            const lessons = LESSONS_DATA;
+            const levelData = getActiveLevelData();
+            const btnContainer = document.getElementById('writing-lesson-buttons');
+
+            if (!lessons || lessons.length === 0) {
+                if (btnContainer) {
+                    btnContainer.innerHTML = `
+                        <div class="px-3.5 py-1.5 rounded-xl bg-teal-50 border border-teal-200 text-teal-800 text-xs font-bold flex items-center gap-1.5">
+                            <span class="w-2 h-2 rounded-full bg-teal-500 animate-pulse"></span>
+                            <span>بانتظار رفع ملزمة ${levelData.nameAr} (PDF)</span>
+                        </div>
+                    `;
+                }
+                const bSelected = document.getElementById('writing-selected-badge');
+                if (bSelected) bSelected.innerText = `بانتظار الملزمة (${levelData.nameAr})`;
+                const tTitle = document.getElementById('writing-task-title');
+                if (tTitle) tTitle.innerText = `ورشة الكتابة الذكية والذكاء الاصطناعي (Gemini AI):`;
+                const bTarget = document.getElementById('writing-target-badge');
+                if (bTarget) bTarget.innerText = `المستوى: ${levelData.nameAr}`;
+                const bCount = document.getElementById('writing-count-badge');
+                if (bCount) bCount.innerText = `0 مهام حالياً`;
+                const pText = document.getElementById('writing-prompt-text');
+                if (pText) pText.innerText = `سيتم تفعيل مهام الكتابة والربط المباشر مع محرك Gemini AI لتقييم النصوص فور رفع ملف الـ PDF الخاص بهذا المستوى.`;
+                const minWords = document.getElementById('min-words-req');
+                if (minWords) minWords.innerText = `الحد الأدنى المتوقع: 40 كلمة`;
+
+                const resCard = document.getElementById('writing-result-card');
+                if (resCard) resCard.classList.add('hidden');
+                const errCard = document.getElementById('writing-error-card');
+                if (errCard) errCard.classList.add('hidden');
+                const loadCard = document.getElementById('writing-loading-card');
+                if (loadCard) loadCard.classList.add('hidden');
+                if (window.lucide) lucide.createIcons();
+                return;
+            }
+
             // If current writing lesson is locked, switch to first unlocked
             if (!isLessonUnlocked(currentWritingLessonNumber)) {
                 let firstUnlocked = 1;
-                for (let i = 1; i <= 11; i++) {
+                for (let i = 1; i <= lessons.length; i++) {
                     if (isLessonUnlocked(i)) firstUnlocked = i;
                     else break;
                 }
                 currentWritingLessonNumber = firstUnlocked;
             }
 
-            // Render buttons 1 to 11 with lock states
-            const btnContainer = document.getElementById('writing-lesson-buttons');
-            btnContainer.innerHTML = Array.from({ length: 11 }, (_, i) => i + 1).map(num => {
-                const unlocked = isLessonUnlocked(num);
-                if (unlocked) {
-                    return `
-                        <button onclick="selectWritingLesson(${num})" class="writing-btn py-2 rounded-xl text-xs font-bold transition ${num === currentWritingLessonNumber ? 'bg-navy text-white shadow-sm ring-2 ring-navy/30' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'}">
-                            L${num}
-                        </button>
-                    `;
-                } else {
-                    return `
-                        <button onclick="showLockedLessonAlert(${num})" class="writing-btn py-2 rounded-xl text-xs font-bold transition bg-slate-100 text-slate-400 border border-slate-200 hover:bg-slate-200/80 cursor-not-allowed flex items-center justify-center gap-1" title="الدرس ${num} مقفل - أكمل الدرس السابق أولاً">
-                            <i data-lucide="lock" class="w-3 h-3 text-slate-400"></i>
-                            <span>L${num}</span>
-                        </button>
-                    `;
-                }
-            }).join('');
+            if (btnContainer) {
+                btnContainer.innerHTML = lessons.map(l => {
+                    const num = l.number;
+                    const unlocked = isLessonUnlocked(num);
+                    if (unlocked) {
+                        return `
+                            <button onclick="selectWritingLesson(${num})" class="writing-btn py-2 rounded-xl text-xs font-bold transition ${num === currentWritingLessonNumber ? 'bg-navy text-white shadow-sm ring-2 ring-navy/30' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'}">
+                                L${num}
+                            </button>
+                        `;
+                    } else {
+                        return `
+                            <button onclick="showLockedLessonAlert(${num})" class="writing-btn py-2 rounded-xl text-xs font-bold transition bg-slate-100 text-slate-400 border border-slate-200 hover:bg-slate-200/80 cursor-not-allowed flex items-center justify-center gap-1" title="الدرس ${num} مقفل - أكمل الدرس السابق أولاً">
+                                <i data-lucide="lock" class="w-3 h-3 text-slate-400"></i>
+                                <span>L${num}</span>
+                            </button>
+                        `;
+                    }
+                }).join('');
+            }
 
             selectWritingLesson(currentWritingLessonNumber);
             if (window.lucide) lucide.createIcons();
         }
 
         function selectWritingLesson(num) {
+            const lessons = getActiveLessons();
+            if (!lessons || lessons.length === 0) return;
+
             if (!isLessonUnlocked(num)) {
                 showLockedLessonAlert(num);
                 return;
             }
             currentWritingLessonNumber = num;
-            const lesson = LESSONS_DATA.find(l => l.number === num) || LESSONS_DATA[0];
-            const spec = lesson.writingSpec;
+            const lesson = lessons.find(l => l.number === num) || lessons[0];
+            const spec = lesson.writingSpec || (lesson.writingTask ? {
+                targetGrammar: "Core Professional Grammar & Vocabulary",
+                requiredItems: 3,
+                prompt: lesson.writingTask.prompt || lesson.title,
+                minWords: 40
+            } : {
+                targetGrammar: "General Workplace Writing",
+                requiredItems: 3,
+                prompt: lesson.title,
+                minWords: 40
+            });
 
             document.querySelectorAll('#writing-lesson-buttons button').forEach((btn, idx) => {
-                const bNum = idx + 1;
+                const targetLesson = lessons[idx];
+                if (!targetLesson) return;
+                const bNum = targetLesson.number;
                 const unlocked = isLessonUnlocked(bNum);
                 if (!unlocked) {
                     btn.className = 'writing-btn py-2 rounded-xl text-xs font-bold transition bg-slate-100 text-slate-400 border border-slate-200 hover:bg-slate-200/80 cursor-not-allowed flex items-center justify-center gap-1';
@@ -2935,29 +3333,42 @@ USING (bucket_id = 'videos');</pre>
                 }
             });
 
-            document.getElementById('writing-selected-badge').innerText = `الدرس ${num}: ${lesson.title}`;
-            document.getElementById('writing-task-title').innerText = `مهمة الدرس (${lesson.title}):`;
-            document.getElementById('writing-target-badge').innerText = `المستهدف: ${spec.targetGrammar}`;
-            document.getElementById('writing-count-badge').innerText = `المطلوب: ${spec.requiredItems} عناصر/جمل`;
-            document.getElementById('writing-prompt-text').innerText = spec.prompt;
-            document.getElementById('min-words-req').innerText = `الحد الأدنى المتوقع: ${spec.minWords} كلمة`;
+            const bSelected = document.getElementById('writing-selected-badge');
+            if (bSelected) bSelected.innerText = `الدرس ${num}: ${lesson.title}`;
+            const tTitle = document.getElementById('writing-task-title');
+            if (tTitle) tTitle.innerText = `مهمة الدرس (${lesson.title}):`;
+            const bTarget = document.getElementById('writing-target-badge');
+            if (bTarget) bTarget.innerText = `المستهدف: ${spec.targetGrammar}`;
+            const bCount = document.getElementById('writing-count-badge');
+            if (bCount) bCount.innerText = `المطلوب: ${spec.requiredItems} عناصر/جمل`;
+            const pText = document.getElementById('writing-prompt-text');
+            if (pText) pText.innerText = spec.prompt;
+            const minWords = document.getElementById('min-words-req');
+            if (minWords) minWords.innerText = `الحد الأدنى المتوقع: ${spec.minWords} كلمة`;
 
             // Reset evaluation card
-            document.getElementById('writing-result-card').classList.add('hidden');
-            document.getElementById('writing-error-card').classList.add('hidden');
-            document.getElementById('writing-loading-card').classList.add('hidden');
+            const resCard = document.getElementById('writing-result-card');
+            if (resCard) resCard.classList.add('hidden');
+            const errCard = document.getElementById('writing-error-card');
+            if (errCard) errCard.classList.add('hidden');
+            const loadCard = document.getElementById('writing-loading-card');
+            if (loadCard) loadCard.classList.add('hidden');
 
-            handleWritingInput(document.getElementById('student-writing-input').value);
+            const sInput = document.getElementById('student-writing-input');
+            if (sInput) handleWritingInput(sInput.value);
         }
 
         function handleWritingInput(val) {
-            const words = val.trim().split(/\s+/).filter(w => w.length > 0);
+            const words = (val || '').trim().split(/\s+/).filter(w => w.length > 0);
             const count = words.length;
             const display = document.getElementById('word-count-display');
+            if (!display) return;
             display.innerText = `${count} كلمة`;
 
-            const lesson = LESSONS_DATA.find(l => l.number === currentWritingLessonNumber) || LESSONS_DATA[0];
-            if (count >= lesson.writingSpec.minWords) {
+            const lessons = getActiveLessons();
+            const lesson = lessons.find(l => l.number === currentWritingLessonNumber) || lessons[0];
+            const minWords = (lesson && (lesson.writingSpec?.minWords || lesson.writingTask?.minWords)) || 40;
+            if (count >= minWords) {
                 display.className = 'text-xs font-bold text-emerald-600';
             } else {
                 display.className = 'text-xs font-semibold text-slate-500';
@@ -3118,6 +3529,7 @@ Return ONLY a valid JSON object matching this exact schema:
                     document.getElementById('writing-error-msg').innerHTML = `تعذر استلام نتيجة التقييم السحابي حالياً. يمكنك الضغط على <strong>'إعادة المحاولة أونلاين'</strong> أو استخدام <strong>'تقييم ذكي فوري (المحرك اللغوي الداخلي)'</strong> للحصول على تقييمك والدرجات فوراً.`;
                 }
                 document.getElementById('writing-error-card').classList.remove('hidden');
+                syncLevelFromUser(currentUser);
                 applyRolePermissions();
             } finally {
                 isEvaluatingWriting = false;
@@ -3286,8 +3698,20 @@ Return ONLY a valid JSON object matching this exact schema:
         // 6. AI SPEAKING PRACTICE (TTS & SPEECH RECOGNITION)
         // ==========================================
         function initSpeakingTab() {
+            LESSONS_DATA = getActiveLessons();
+            const lessons = LESSONS_DATA;
+            const levelData = getActiveLevelData();
             const select = document.getElementById('speaking-lesson-select');
-            select.innerHTML = LESSONS_DATA.map(l => `
+            if (!select) return;
+
+            if (!lessons || lessons.length === 0) {
+                select.innerHTML = `<option value="">(بانتظار رفع ملزمة ${levelData.nameAr})</option>`;
+                const targetText = document.getElementById('speaking-target-text');
+                if (targetText) targetText.innerText = "يرجى رفع ملزمة PDF لاستخراج محادثات المستوى وتفعيل استوديو التدريب الصوتي.";
+                return;
+            }
+
+            select.innerHTML = lessons.map(l => `
                 <option value="${l.id}">الدرس ${l.number}: ${l.title}</option>
             `).join('');
 
@@ -3304,13 +3728,20 @@ Return ONLY a valid JSON object matching this exact schema:
         }
 
         function loadSpeakingDialogue() {
-            const id = parseInt(document.getElementById('speaking-lesson-select').value, 10);
-            const lesson = LESSONS_DATA.find(l => l.id === id) || LESSONS_DATA[0];
-            const dialogue = lesson.dialogues[0] || { textA: lesson.expressions[0] || "Could you please help me with this?" };
+            const lessons = getActiveLessons();
+            if (!lessons || lessons.length === 0) return;
+            const selectEl = document.getElementById('speaking-lesson-select');
+            const id = selectEl ? parseInt(selectEl.value, 10) : 1;
+            const lesson = lessons.find(l => l.id === id) || lessons[0];
+            if (!lesson) return;
+            const dialogue = (lesson.dialogues && lesson.dialogues[0]) || { textA: (lesson.expressions && lesson.expressions[0]) || "Good morning, how may I help you today?" };
 
-            document.getElementById('speaking-target-text').innerText = dialogue.textA;
-            document.getElementById('speaking-result-container').classList.add('hidden');
-            document.getElementById('spoken-transcript-output').innerText = "[سيظهر كلامك المسجل هنا بعد التحدث...]";
+            const targetEl = document.getElementById('speaking-target-text');
+            if (targetEl) targetEl.innerText = dialogue.textA || dialogue.text || "Good morning, how may I help you today?";
+            const resContainer = document.getElementById('speaking-result-container');
+            if (resContainer) resContainer.classList.add('hidden');
+            const transOutput = document.getElementById('spoken-transcript-output');
+            if (transOutput) transOutput.innerText = "[سيظهر كلامك المسجل هنا بعد التحدث...]";
             const manualInput = document.getElementById('manual-speech-input');
             if (manualInput) manualInput.value = '';
         }
@@ -3318,6 +3749,12 @@ Return ONLY a valid JSON object matching this exact schema:
         function speakTargetText() {
             const text = document.getElementById('speaking-target-text').innerText;
             speakText(text);
+        }
+
+        function speakFromAttr(el) {
+            if (!el) return;
+            const txt = el.getAttribute('data-speak') || '';
+            speakText(txt);
         }
 
         function speakText(text) {
@@ -3795,8 +4232,25 @@ Return ONLY a valid JSON object matching this exact schema:
         // 10. QUIZZES RENDERER
         // ==========================================
         function renderQuizTab() {
+            LESSONS_DATA = getActiveLessons();
+            const lessons = LESSONS_DATA;
             const select = document.getElementById('quiz-lesson-select');
-            select.innerHTML = LESSONS_DATA.map(l => `
+            if (!select) return;
+
+            if (!lessons || lessons.length === 0) {
+                select.innerHTML = `<option value="">(بانتظار ملزمة PDF)</option>`;
+                const container = document.getElementById('quiz-container');
+                if (container) {
+                    container.innerHTML = `
+                        <div class="p-8 text-center text-slate-400 text-xs bg-slate-50 rounded-2xl border border-slate-200">
+                            لا توجد اختبارات متاحة حالياً لهذا المستوى (بانتظار رفع ملزمة الـ PDF).
+                        </div>
+                    `;
+                }
+                return;
+            }
+
+            select.innerHTML = lessons.map(l => `
                 <option value="${l.id}">الدرس ${l.number}: ${l.title}</option>
             `).join('');
 
@@ -4257,8 +4711,11 @@ Return ONLY a valid JSON object matching this exact schema:
                 return;
             }
 
-            const lesson = LESSONS_DATA.find(l => l.number === lessonNum) || LESSONS_DATA[0];
-            const textToRead = lesson.readings.map(r => r.text).join('. ');
+            const lessons = typeof getActiveLessons === 'function' ? getActiveLessons() : (LESSONS_DATA || []);
+            const lesson = lessons.find(l => l.number === lessonNum) || lessons[0];
+            const textToRead = (lesson && lesson.readings && lesson.readings.length > 0) 
+                ? lesson.readings.map(r => r.text).join('. ') 
+                : (lesson ? (lesson.title + '. ' + (lesson.description || '')) : 'Lesson audio narrative');
 
             if ('speechSynthesis' in window) {
                 window.speechSynthesis.cancel();
@@ -4272,9 +4729,12 @@ Return ONLY a valid JSON object matching this exact schema:
                     if (statusLabel) statusLabel.innerText = `جاري قراءة نص الدرس (سرعة ${globalAudioSpeed}x)...`;
                     lucide.createIcons();
 
-                    // Track audio listening practice in Supabase
+                    // Track audio listening practice in Supabase and mark media completed
                     if (typeof trackAudioInteraction === 'function') {
                         trackAudioInteraction(1);
+                    }
+                    if (typeof markLessonMediaCompleted === 'function') {
+                        markLessonMediaCompleted(lessonNum);
                     }
 
                     audioCurrentPercent = 0;
@@ -4345,19 +4805,20 @@ Return ONLY a valid JSON object matching this exact schema:
 
         // Calculate 4 Core Language Skills (Reading, Listening, Writing, Speaking)
         function calculateEmployeeSkills(completedCount, userProg = {}) {
-            // 1. Reading (القراءة): Based on 11 lessons reading texts & comprehension
-            const reading = Math.min(100, Math.round((completedCount / 11) * 100));
+            const totalL = (typeof getActiveLessons === 'function' && getActiveLessons().length) ? getActiveLessons().length : 12;
+            // 1. Reading (القراءة): Based on curriculum lessons reading texts & comprehension
+            const reading = Math.min(100, Math.round((completedCount / totalL) * 100));
 
             // 2. Listening (الاستماع): Dialogues and audio practice in completed lessons
             const listeningBonus = (userProg.speakingPractices && userProg.speakingPractices > 0) ? Math.min(10, userProg.speakingPractices * 2) : 0;
-            const listening = Math.min(100, Math.round((completedCount / 11) * 90) + listeningBonus);
+            const listening = Math.min(100, Math.round((completedCount / totalL) * 90) + listeningBonus);
 
             // 3. Writing (الكتابة): Directly from Gemini AI Evaluation Workshop (6-Rubric score out of 100)
             const writing = userProg.aiWritingScore || 0;
 
             // 4. Speaking (المحادثة والنطق): Voice interaction practices and conversational drills
             const speakingSessions = userProg.speakingPractices || 0;
-            const speaking = Math.min(100, Math.round((completedCount / 11) * 35) + Math.min(65, speakingSessions * 13));
+            const speaking = Math.min(100, Math.round((completedCount / totalL) * 35) + Math.min(65, speakingSessions * 13));
 
             return {
                 reading,
@@ -4423,8 +4884,9 @@ Return ONLY a valid JSON object matching this exact schema:
 
                 const compLessons = [...(userProg.completedLessons || [])];
                 const completedCount = compLessons.length;
-                const progressPct = Math.round((completedCount / 11) * 100);
-                const status = completedCount === 11 ? 'مكتمل' : (completedCount > 0 ? 'قيد التدريب' : 'لم يبدأ');
+                const totalL = (typeof getActiveLessons === 'function' && getActiveLessons().length) ? getActiveLessons().length : 12;
+                const progressPct = Math.round((completedCount / totalL) * 100);
+                const status = completedCount >= totalL ? 'مكتمل' : (completedCount > 0 ? 'قيد التدريب' : 'لم يبدأ');
                 const skills = calculateEmployeeSkills(completedCount, userProg);
 
                 const cleanJoinDate = acc.createdAt || acc.created_at || "2026/01/15";
@@ -4868,7 +5330,7 @@ Return ONLY a valid JSON object matching this exact schema:
                         <td class="p-3.5 min-w-[150px]">
                             <div class="space-y-1">
                                 <div class="flex items-center justify-between text-[11px] font-bold text-navy">
-                                    <span>${emp.completedCount} / 11 درساً</span>
+                                    <span>${emp.completedCount} / ${(typeof getActiveLessons === 'function' && getActiveLessons().length) ? getActiveLessons().length : 12} درساً</span>
                                     <span class="font-mono">${emp.progressPct}%</span>
                                 </div>
                                 <div class="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
@@ -4924,7 +5386,7 @@ Return ONLY a valid JSON object matching this exact schema:
                                     <i data-lucide="key" class="w-3.5 h-3.5 text-amber-600"></i>
                                     <span class="hidden sm:inline">الدخول</span>
                                 </button>
-                                ${emp.completedCount === 11 ? `
+                                ${(emp.completedCount >= ((typeof getActiveLessons === 'function' && getActiveLessons().length) ? getActiveLessons().length : 12)) ? `
                                     <button onclick="showCertificateById('${emp.id}')" class="p-1 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-700 transition" title="عرض شهادة التخرج">
                                         <i data-lucide="award" class="w-4 h-4"></i>
                                     </button>
@@ -5085,7 +5547,8 @@ Return ONLY a valid JSON object matching this exact schema:
             document.getElementById('dossier-meta').innerText = `الكود: ${emp.id} • الشركة: ${companyDisplay} • انضمام: ${emp.joinDate || '2026/01/15'} • المستوى: ${emp.proficiencyLevel || 'Intermediate'} • آخر نشاط: ${emp.lastActive || 'مؤخراً'}`;
 
             const certBtn = document.getElementById('dossier-cert-btn');
-            if (emp.completedCount === 11) {
+            const totalL = (typeof getActiveLessons === 'function' && getActiveLessons().length) ? getActiveLessons().length : 12;
+            if (emp.completedCount >= totalL) {
                 certBtn.classList.remove('hidden');
             } else {
                 certBtn.classList.add('hidden');
@@ -5199,8 +5662,8 @@ Return ONLY a valid JSON object matching this exact schema:
                         <span class="text-slate-400 font-normal">حالة كل درس معتمدة تلقائياً</span>
                     </h4>
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-56 overflow-y-auto custom-scrollbar p-1">
-                        ${LESSONS_DATA.map(l => {
-                            const isDone = emp.completedLessons.includes(l.number);
+                        ${(getActiveLessons() && getActiveLessons().length > 0) ? getActiveLessons().map(l => {
+                            const isDone = emp.completedLessons && emp.completedLessons.includes(l.number);
                             return `
                                 <div class="p-2.5 rounded-xl border ${isDone ? 'bg-emerald-50/70 border-emerald-200' : 'bg-slate-50 border-slate-200/80'} flex items-center justify-between text-xs">
                                     <div class="flex items-center gap-2">
@@ -5212,7 +5675,11 @@ Return ONLY a valid JSON object matching this exact schema:
                                     </span>
                                 </div>
                             `;
-                        }).join('')}
+                        }).join('') : `
+                            <div class="col-span-2 p-4 text-center text-slate-400 text-xs bg-slate-50 rounded-xl border border-slate-200">
+                                بانتظار رفع ملفات المناهج (PDF) لتتبع سجل إتمام الدروس
+                            </div>
+                        `}
                     </div>
                 </div>
             `;
@@ -5473,7 +5940,8 @@ Return ONLY a valid JSON object matching this exact schema:
             }
             progDb[currentUser.id].completedLessons = [...activeLessons];
             progDb[currentUser.id].lastActive = nowArabic;
-            if (activeLessons.length === 11) {
+            const totalLessonsCount = (typeof getActiveLessons === 'function' && getActiveLessons().length) ? getActiveLessons().length : 12;
+            if (activeLessons.length >= totalLessonsCount) {
                 progDb[currentUser.id].completionDate = new Date().toISOString().slice(0, 10);
             }
             saveProgressDb(progDb);
@@ -5486,10 +5954,10 @@ Return ONLY a valid JSON object matching this exact schema:
             if (cIdx >= 0) {
                 LMS_EMPLOYEES_CACHE[cIdx].completedLessons = [...activeLessons];
                 LMS_EMPLOYEES_CACHE[cIdx].completedCount = activeLessons.length;
-                LMS_EMPLOYEES_CACHE[cIdx].progressPct = Math.round((activeLessons.length / 11) * 100);
-                LMS_EMPLOYEES_CACHE[cIdx].status = activeLessons.length === 11 ? 'مكتمل' : activeLessons.length > 0 ? 'قيد التدريب' : 'لم يبدأ';
+                LMS_EMPLOYEES_CACHE[cIdx].progressPct = Math.round((activeLessons.length / totalLessonsCount) * 100);
+                LMS_EMPLOYEES_CACHE[cIdx].status = activeLessons.length >= totalLessonsCount ? 'مكتمل' : activeLessons.length > 0 ? 'قيد التدريب' : 'لم يبدأ';
                 LMS_EMPLOYEES_CACHE[cIdx].lastActive = nowArabic;
-                if (activeLessons.length === 11) {
+                if (activeLessons.length >= totalLessonsCount) {
                     LMS_EMPLOYEES_CACHE[cIdx].completionDate = new Date().toISOString().slice(0, 10);
                 }
             }
@@ -6618,7 +7086,7 @@ Return ONLY a valid JSON object matching this exact schema:
 
                         <!-- HTML5 Real Video Player -->
                         <div class="relative w-full bg-black flex items-center justify-center">
-                            <video id="lesson-html5-player-${lesson.number}" key="${activeVideo.id}" controls class="w-full max-h-[460px] object-contain bg-black shadow-inner" playsinline preload="metadata">
+                            <video id="lesson-html5-player-${lesson.number}" key="${activeVideo.id}" onplay="if(typeof markLessonMediaCompleted==='function')markLessonMediaCompleted(${lesson.number})" controls class="w-full max-h-[460px] object-contain bg-black shadow-inner" playsinline preload="metadata">
                                 <source src="${activeVideo.downloadUrl}" type="${activeVideo.fileType || "video/mp4"}">
                                 متصفحك لا يدعم مشغل الفيديو المباشر. يرجى استخدام زر التنزيل المباشر أدناه لمشاهدة الفيديو.
                             </video>
@@ -7076,13 +7544,13 @@ Return ONLY a valid JSON object matching this exact schema:
                 };
                 saveProgressDb(progDb);
 
-                // Update in LMS Employees Cache
                 const cIdx = LMS_EMPLOYEES_CACHE.findIndex(e => String(e.id).trim() === userId);
                 if (cIdx >= 0) {
+                    const totalL = (typeof getActiveLessons === 'function' && getActiveLessons().length) ? getActiveLessons().length : 12;
                     LMS_EMPLOYEES_CACHE[cIdx].completedLessons = [...finalLessons];
                     LMS_EMPLOYEES_CACHE[cIdx].completedCount = finalLessons.length;
-                    LMS_EMPLOYEES_CACHE[cIdx].progressPct = Math.round((finalLessons.length / 11) * 100);
-                    LMS_EMPLOYEES_CACHE[cIdx].status = finalLessons.length === 11 ? "مكتمل" : (finalLessons.length > 0 ? "قيد التدريب" : "لم يبدأ");
+                    LMS_EMPLOYEES_CACHE[cIdx].progressPct = Math.round((finalLessons.length / totalL) * 100);
+                    LMS_EMPLOYEES_CACHE[cIdx].status = finalLessons.length >= totalL ? "مكتمل" : (finalLessons.length > 0 ? "قيد التدريب" : "لم يبدأ");
                     LMS_EMPLOYEES_CACHE[cIdx].speakingPractices = finalSpeaking;
                     LMS_EMPLOYEES_CACHE[cIdx].aiWritingScore = finalAiScore;
                     LMS_EMPLOYEES_CACHE[cIdx].lastActive = lastActiveTime;
@@ -7827,8 +8295,9 @@ Return ONLY a valid JSON object matching this exact schema:
 
                     const compLessons = [...(userProg.completedLessons || [])];
                     const completedCount = compLessons.length;
-                    const progressPct = Math.round((completedCount / 11) * 100);
-                    const status = completedCount === 11 ? "مكتمل" : (completedCount > 0 ? "قيد التدريب" : "لم يبدأ");
+                    const totalL = (typeof getActiveLessons === 'function' && getActiveLessons().length) ? getActiveLessons().length : 12;
+                    const progressPct = Math.round((completedCount / totalL) * 100);
+                    const status = completedCount >= totalL ? "مكتمل" : (completedCount > 0 ? "قيد التدريب" : "لم يبدأ");
 
                     // Compute 4 Skills (Reading, Listening, Writing, Speaking)
                     const skills = typeof calculateEmployeeSkills === "function"
